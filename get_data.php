@@ -1,6 +1,7 @@
 <?php
 session_start();
 if (!isset($_SESSION['login'])) {
+    header('Content-Type: application/json; charset=utf-8', true, 401);
     echo json_encode(['error' => 'Unauthorized']);
     exit;
 }
@@ -8,32 +9,46 @@ if (!isset($_SESSION['login'])) {
 $koneksi = new mysqli("localhost", "root", "123", "billing");
 
 if ($koneksi->connect_error) {
-    die("Koneksi gagal: " . $koneksi->connect_error);
+    header('Content-Type: application/json; charset=utf-8', true, 500);
+    echo json_encode(['error' => 'Koneksi gagal: ' . $koneksi->connect_error]);
+    exit;
 }
 
 $page  = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 10;
 $offset = ($page - 1) * $limit;
 
-$search = isset($_GET['search']) ? $koneksi->real_escape_string($_GET['search']) : "";
+// Terima beberapa nama param (search, q, keyword)
+$search_raw = trim(
+    $_REQUEST['search'] ?? 
+    $_REQUEST['q'] ?? 
+    $_REQUEST['keyword'] ?? 
+    ''
+);
+$search_param = '%' . $search_raw . '%';
 
-// Hitung total data (dengan filter search)
-$totalQuery = "SELECT COUNT(*) as total FROM pelanggan 
-               WHERE nama LIKE '%$search%' 
-                  OR id_pelanggan LIKE '%$search%' 
-                  OR paket LIKE '%$search%'";
-$totalResult = $koneksi->query($totalQuery);
+// Hitung total data (dengan filter search) menggunakan prepared statement
+$totalStmt = $koneksi->prepare(
+    "SELECT COUNT(*) as total FROM pelanggan 
+     WHERE nama LIKE ? OR id_pelanggan LIKE ? OR paket LIKE ?"
+);
+$totalStmt->bind_param('sss', $search_param, $search_param, $search_param);
+$totalStmt->execute();
+$totalResult = $totalStmt->get_result();
 $totalRow = $totalResult->fetch_assoc();
 $totalData = $totalRow['total'];
-$totalPages = ceil($totalData / $limit);
+$totalPages = $limit > 0 ? ceil($totalData / $limit) : 0;
 
-// Ambil data sesuai pagination + filter
+// Ambil data sesuai pagination + filter (LIMIT dan OFFSET sudah ter-cast jadi aman)
 $sql = "SELECT * FROM pelanggan 
-        WHERE nama LIKE '%$search%' 
-           OR id_pelanggan LIKE '%$search%' 
-           OR paket LIKE '%$search%' 
+        WHERE nama LIKE ? OR id_pelanggan LIKE ? OR paket LIKE ?
         LIMIT $limit OFFSET $offset";
-$result = $koneksi->query($sql);
+$stmt = $koneksi->prepare($sql);
+$stmt->bind_param('sss', $search_param, $search_param, $search_param);
+$stmt->execute();
+$result = $stmt->get_result();
+
+header('Content-Type: application/json; charset=utf-8');
 
 $nomor_admin = "6xxxxxx"; 
 

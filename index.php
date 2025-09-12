@@ -372,7 +372,7 @@ if (!isset($_SESSION['login'])) {
                 <h2><i class="fas fa-list"></i> Daftar Billing Pelanggan</h2>
                 <div class="search-box">
                     <i class="fas fa-search"></i>
-                    <input type="text" placeholder="Cari pelanggan...">
+                    <input id="search-input" type="text" placeholder="Cari pelanggan..." aria-label="Cari pelanggan">
                 </div>
             </div>
             
@@ -397,90 +397,119 @@ if (!isset($_SESSION['login'])) {
     <script>
         let currentPage = 1;
         const itemsPerPage = 10;
+        let currentSearch = '';
 
-        // Fungsi untuk load data via AJAX
-        function loadData(page) {
-            // Simulasi loading
+        // Debounce helper
+        function debounce(fn, delay = 300) {
+            let t;
+            return (...args) => {
+                clearTimeout(t);
+                t = setTimeout(() => fn(...args), delay);
+            };
+        }
+
+        // Fungsi untuk load data via AJAX (kirim cookie/session dan search)
+        function loadData(page = 1, search = '') {
+            currentPage = page;
+            currentSearch = search;
+
+            console.log('Loading data - Page:', page, 'Search:', search); // Debug log
+
             document.getElementById('table-container').innerHTML = `
                 <div style="padding: 40px; text-align: center; color: var(--gray);">
                     <i class="fas fa-spinner fa-spin" style="font-size: 24px; margin-bottom: 15px;"></i>
                     <p>Memuat data...</p>
                 </div>
             `;
-            
-            fetch(`get_data.php?page=${page}&limit=${itemsPerPage}`)
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('table-container').innerHTML = data.table;
-                    renderPagination(data.totalPages, page);
-                })
-                .catch(err => {
-                    console.error('Error:', err);
-                    document.getElementById('table-container').innerHTML = `
-                        <div style="padding: 40px; text-align: center; color: var(--danger);">
-                            <i class="fas fa-exclamation-triangle" style="font-size: 24px; margin-bottom: 15px;"></i>
-                            <p>Terjadi kesalahan saat memuat data.</p>
-                            <button onclick="loadData(${page})" class="action-btn btn-edit">
-                                <i class="fas fa-redo"></i> Coba Lagi
-                            </button>
-                        </div>
-                    `;
-                });
+
+            const url = `get_data.php?page=${page}&limit=${itemsPerPage}` + (search ? `&search=${encodeURIComponent(search)}` : '');
+            console.log('Fetching URL:', url); // Debug log
+
+            fetch(url, {
+                method: 'GET',
+                credentials: 'same-origin', // pastikan cookie/session dikirim
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => {
+                if (response.status === 401) {
+                    // session expired / unauthorized -> redirect ke login
+                    window.location.href = 'login.php';
+                    throw new Error('Unauthorized');
+                }
+                return response.json();
+            })
+            .then(data => {
+                document.getElementById('table-container').innerHTML = data.table;
+                renderPagination(data.totalPages, page);
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                document.getElementById('table-container').innerHTML = `
+                    <div style="padding: 40px; text-align: center; color: var(--danger);">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 24px; margin-bottom: 15px;"></i>
+                        <p>Terjadi kesalahan saat memuat data.</p>
+                        <button onclick="loadData(${page}, '${encodeURIComponent(search)}')" class="action-btn btn-edit">
+                            <i class="fas fa-redo"></i> Coba Lagi
+                        </button>
+                    </div>
+                `;
+            });
         }
 
-        // Render tombol pagination
-        function renderPagination(totalPages, currentPage) {
+        // Render tombol pagination (menggunakan currentSearch agar filter tetap aktif)
+        function renderPagination(totalPages, currentPageLocal) {
             const paginationDiv = document.getElementById('pagination');
             paginationDiv.innerHTML = '';
 
-            // Info halaman
             const pageInfo = document.createElement('span');
             pageInfo.className = 'page-info';
-            pageInfo.innerText = `Halaman ${currentPage} dari ${totalPages}`;
+            pageInfo.innerText = `Halaman ${currentPageLocal} dari ${totalPages}`;
             paginationDiv.appendChild(pageInfo);
 
-            // Tombol Previous
             const prevBtn = document.createElement('button');
             prevBtn.innerHTML = '<i class="fas fa-chevron-left"></i> Sebelumnya';
-            prevBtn.disabled = currentPage === 1;
+            prevBtn.disabled = currentPageLocal === 1;
             prevBtn.onclick = () => {
-                if (currentPage > 1) {
-                    currentPage--;
-                    loadData(currentPage);
+                if (currentPageLocal > 1) {
+                    loadData(currentPageLocal - 1, currentSearch);
                 }
             };
             paginationDiv.appendChild(prevBtn);
 
-            // Tombol nomor halaman (maksimal 5 tombol)
-            const startPage = Math.max(1, currentPage - 2);
+            const startPage = Math.max(1, currentPageLocal - 2);
             const endPage = Math.min(totalPages, startPage + 4);
-            
             for (let i = startPage; i <= endPage; i++) {
                 const pageBtn = document.createElement('button');
                 pageBtn.innerText = i;
-                if (i === currentPage) pageBtn.classList.add('active');
-                pageBtn.onclick = () => {
-                    currentPage = i;
-                    loadData(currentPage);
-                };
+                if (i === currentPageLocal) pageBtn.classList.add('active');
+                pageBtn.onclick = () => loadData(i, currentSearch);
                 paginationDiv.appendChild(pageBtn);
             }
 
-            // Tombol Next
             const nextBtn = document.createElement('button');
             nextBtn.innerHTML = 'Selanjutnya <i class="fas fa-chevron-right"></i>';
-            nextBtn.disabled = currentPage === totalPages;
+            nextBtn.disabled = currentPageLocal === totalPages;
             nextBtn.onclick = () => {
-                if (currentPage < totalPages) {
-                    currentPage++;
-                    loadData(currentPage);
+                if (currentPageLocal < totalPages) {
+                    loadData(currentPageLocal + 1, currentSearch);
                 }
             };
             paginationDiv.appendChild(nextBtn);
         }
 
-        // Load data pertama kali
-        window.onload = () => loadData(currentPage);
+        // Hubungkan input search dengan debounce
+        const searchInput = document.getElementById('search-input');
+        const onSearch = debounce(function () {
+            const q = this.value.trim();
+            console.log('Search query:', q); // Debug log
+            loadData(1, q);
+        }, 300);
+        searchInput.addEventListener('input', onSearch);
+
+        // Load data pertama kali (jika ada query awal, dapat diisi di future)
+        window.onload = () => loadData(currentPage, currentSearch);
     </script>
 
 </body>

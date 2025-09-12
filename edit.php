@@ -16,14 +16,19 @@ if (isset($_POST['update'])) {
     $status = $_POST['status_bayar'];
     $nomor_pelanggan = isset($_POST['nomor_pelanggan']) ? $koneksi->real_escape_string($_POST['nomor_pelanggan']) : '';
 
-    // pastikan status otomatis: 'Belum Lunas' jika tagihan > 0, sebaliknya 'Lunas'
-    // cast/normalize tagihan sebagai angka terlebih dulu
-    $numeric_tagihan = floatval(str_replace(',', '.', $tagihan));
-    if ($numeric_tagihan > 0) {
-        $status = 'Belum Lunas';
+    // --- LOGIKA YANG DIPERBARUI ---
+    // Jika admin secara manual memilih status "Lunas", maka tagihan otomatis diatur menjadi 0.
+    if ($status == 'Lunas') {
+        $tagihan = 0;
     } else {
-        $status = 'Lunas';
+        // Jika tagihan diisi lebih dari 0, pastikan statusnya adalah "Belum Lunas".
+        // Ini menjaga konsistensi data dan juga didukung oleh trigger database.
+        $numeric_tagihan = floatval(str_replace(',', '.', $tagihan));
+        if ($numeric_tagihan > 0) {
+            $status = 'Belum Lunas';
+        }
     }
+    // --- AKHIR DARI LOGIKA YANG DIPERBARUI ---
 
     $koneksi->query("UPDATE pelanggan SET tagihan='$tagihan', status_bayar='$status', nomor_pelanggan='$nomor_pelanggan' WHERE id=$id");
 

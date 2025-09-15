@@ -25,8 +25,8 @@ $tagihan = (float)$_POST['tagihan'];
 $waktu = date('Y-m-d H:i:s'); // Waktu saat ini
 
 // Validasi sederhana
-if (empty($id_pelanggan) || empty($nama) || empty($paket)) {
-    echo json_encode(['success' => false, 'message' => 'ID Pelanggan, Nama, dan Paket wajib diisi.']);
+if (empty($nama) || empty($paket)) {
+    echo json_encode(['success' => false, 'message' => 'Nama dan Paket wajib diisi.']);
     exit;
 }
 

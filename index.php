@@ -14,6 +14,9 @@ if (!isset($_SESSION['login'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Billing</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" href="logo.png" type="image/png">
+    <link rel="shortcut icon" href="logo.png" type="image/png">
+    <link rel="apple-touch-icon" sizes="180x180" href="logo.png">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         :root {
@@ -527,7 +530,7 @@ if (!isset($_SESSION['login'])) {
                             <div class="grid">
                                 <div class="col">
                                     <label class="small">ID Pelanggan</label>
-                                    <input type="text" name="id_pelanggan" required>
+                                    <input type="text" name="id_pelanggan">
                                 </div>
                                 <div class="col">
                                     <label class="small">Nama Lengkap</label>

@@ -6,6 +6,16 @@ if (!isset($_SESSION['login'])) {
     exit;
 }
 
+// Deteksi tabel berdasarkan wilayah user
+$table_name = 'pelanggan_jogja'; // default untuk jogja
+if (isset($_SESSION['wilayah'])) {
+    if ($_SESSION['wilayah'] === 'samiran') {
+        $table_name = 'pelanggan_samiran';
+    } elseif ($_SESSION['wilayah'] === 'godean') {
+        $table_name = 'pelanggan_godean';
+    }
+}
+
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 10;
 $offset = ($page - 1) * $limit;
@@ -39,12 +49,12 @@ if (!empty($conditions)) {
 // --- AKHIR DARI LOGIKA ---
 
 
-$totalQuery = "SELECT COUNT(*) as total FROM pelanggan" . $where;
+$totalQuery = "SELECT COUNT(*) as total FROM $table_name" . $where;
 $totalResult = $koneksi->query($totalQuery);
 $totalData = (int)($totalResult->fetch_assoc()['total'] ?? 0);
 $totalPages = (int)ceil($totalData / $limit) ?: 1;
 
-$sql = "SELECT * FROM pelanggan" . $where . " ORDER BY id DESC LIMIT $limit OFFSET $offset";
+$sql = "SELECT * FROM $table_name" . $where . " ORDER BY id DESC LIMIT $limit OFFSET $offset";
 $result = $koneksi->query($sql);
 
 $nomor_admin = "6285174328821"; // Ganti dengan nomor Admin Anda

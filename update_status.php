@@ -8,6 +8,16 @@ if (!isset($_SESSION['login'])) {
     exit;
 }
 
+// Deteksi tabel berdasarkan wilayah user
+$table_name = 'pelanggan_jogja'; // default untuk jogja
+if (isset($_SESSION['wilayah'])) {
+    if ($_SESSION['wilayah'] === 'samiran') {
+        $table_name = 'pelanggan_samiran';
+    } elseif ($_SESSION['wilayah'] === 'godean') {
+        $table_name = 'pelanggan_godean';
+    }
+}
+
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $data = json_decode(file_get_contents('php://input'), true);
 
@@ -20,12 +30,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // --- LOGIKA BARU DIMULAI DI SINI ---
         if ($status == 'Lunas') {
             // Jika status diubah menjadi Lunas, perbarui status DAN atur tagihan menjadi 0
-            $sql = "UPDATE pelanggan SET status_bayar=?, tagihan=0 WHERE id=?";
+            $sql = "UPDATE $table_name SET status_bayar=?, tagihan=0 WHERE id=?";
             $stmt = $koneksi->prepare($sql);
             $stmt->bind_param("si", $status, $id);
         } else {
             // Jika status diubah menjadi Belum Lunas, hanya perbarui statusnya
-            $sql = "UPDATE pelanggan SET status_bayar=? WHERE id=?";
+            $sql = "UPDATE $table_name SET status_bayar=? WHERE id=?";
             $stmt = $koneksi->prepare($sql);
             $stmt->bind_param("si", $status, $id);
         }

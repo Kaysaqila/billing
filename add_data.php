@@ -16,6 +16,16 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
+// Deteksi tabel berdasarkan wilayah user
+$table_name = 'pelanggan_jogja'; // default untuk jogja
+if (isset($_SESSION['wilayah'])) {
+    if ($_SESSION['wilayah'] === 'samiran') {
+        $table_name = 'pelanggan_samiran';
+    } elseif ($_SESSION['wilayah'] === 'godean') {
+        $table_name = 'pelanggan_godean';
+    }
+}
+
 // Ambil dan bersihkan data dari form
 $id_pelanggan = $koneksi->real_escape_string($_POST['id_pelanggan']);
 $nama = $koneksi->real_escape_string($_POST['nama']);
@@ -33,7 +43,7 @@ if (empty($nama) || empty($paket)) {
 // Status bayar akan diatur otomatis oleh trigger database
 // berdasarkan nilai tagihan. Jadi kita tidak perlu set di sini.
 
-$sql = "INSERT INTO pelanggan (id_pelanggan, nama, paket, waktu, tagihan, nomor_pelanggan) 
+$sql = "INSERT INTO $table_name (id_pelanggan, nama, paket, waktu, tagihan, nomor_pelanggan) 
         VALUES ('$id_pelanggan', '$nama', '$paket', '$waktu', '$tagihan', '$nomor_pelanggan')";
 
 if ($koneksi->query($sql)) {

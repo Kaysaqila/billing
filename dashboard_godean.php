@@ -5,6 +5,15 @@ if (!isset($_SESSION['login'])) {
     header("Location: login.php");
     exit;
 }
+
+if (!isset($_SESSION['wilayah']) || $_SESSION['wilayah'] !== 'godean') {
+    if (isset($_SESSION['wilayah']) && $_SESSION['wilayah'] === 'samiran') {
+        header('Location: dashboard_samiran.php');
+        exit;
+    }
+    header('Location: dashboard_jogja.php');
+    exit;
+}
 ?>
 
 <!DOCTYPE html>
@@ -467,7 +476,7 @@ if (!isset($_SESSION['login'])) {
 <body>
 
     <div class="header">
-        <h1><i class="fas fa-file-invoice-dollar"></i> Dashboard Billing</h1>
+        <h1><i class="fas fa-file-invoice-dollar"></i> Dashboard Billing Godean</h1>
         <div class="header-actions">
             <div class="user-info">
                 <i class="fas fa-user-circle"></i>

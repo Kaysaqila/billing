@@ -1,3 +1,3 @@
 <?php
-$hash = password_hash("admina6", PASSWORD_DEFAULT);
+$hash = password_hash("apayah", PASSWORD_DEFAULT);
 echo $hash;

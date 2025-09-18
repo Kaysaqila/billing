@@ -17,7 +17,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             // sukses login
             $_SESSION['login'] = true;
             $_SESSION['username'] = $row['username'];
-            header("Location: index.php");
+            $_SESSION['role'] = $row['role'];
+            $_SESSION['wilayah'] = $row['wilayah'];
+
+            // logika redirect (superadmin dihapus)
+            if ($row['wilayah'] === 'jogja') {
+                header("Location: dashboard_jogja.php");
+            } elseif ($row['wilayah'] === 'samiran') {
+                header("Location: dashboard_samiran.php");
+            } elseif ($row['wilayah'] === 'godean') {
+                header("Location: dashboard_godean.php");
+            } else {
+                // fallback default
+                header("Location: index.php");
+            }
             exit;
         } else {
             $error = "Password salah!";

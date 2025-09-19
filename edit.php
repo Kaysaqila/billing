@@ -9,7 +9,7 @@ error_log("Session data: " . print_r($_SESSION, true));
 $table_name = 'pelanggan_jogja'; // default untuk jogja
 if (isset($_SESSION['wilayah'])) {
     if ($_SESSION['wilayah'] === 'samiran') {
-        $table_name = 'pelanggan_samiran_2';
+        $table_name = 'pelanggan_samiran';
     } elseif ($_SESSION['wilayah'] === 'godean') {
         $table_name = 'pelanggan_godean';
     }

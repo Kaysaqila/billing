@@ -12,7 +12,7 @@ if (!isset($_SESSION['login'])) {
 $table_name = 'pelanggan_jogja'; // default untuk jogja
 if (isset($_SESSION['wilayah'])) {
     if ($_SESSION['wilayah'] === 'samiran') {
-        $table_name = 'pelanggan_samiran';
+        $table_name = 'pelanggan_samiran_2';
     } elseif ($_SESSION['wilayah'] === 'godean') {
         $table_name = 'pelanggan_godean';
     }

@@ -9,7 +9,7 @@ error_log("Session data: " . print_r($_SESSION, true));
 $table_name = 'pelanggan_jogja'; // default untuk jogja
 if (isset($_SESSION['wilayah'])) {
     if ($_SESSION['wilayah'] === 'samiran') {
-        $table_name = 'pelanggan_samiran';
+        $table_name = 'pelanggan_samiran_2';
     } elseif ($_SESSION['wilayah'] === 'godean') {
         $table_name = 'pelanggan_godean';
     }
@@ -67,11 +67,22 @@ if (isset($_POST['update'])) {
     $tagihan_escaped = $koneksi->real_escape_string($tagihan);
     $status_escaped = $koneksi->real_escape_string($status);
     
-    $update_query = "UPDATE $table_name SET tagihan='$tagihan_escaped', status_bayar='$status_escaped', nomor_pelanggan='$nomor_pelanggan' WHERE id=$id";
-    
+    // Cek apakah kolom nomor_pelanggan ada di tabel yang sedang digunakan
+    $escaped_table = $koneksi->real_escape_string($table_name);
+    $col_check_sql = "SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '$escaped_table' AND COLUMN_NAME = 'nomor_pelanggan' LIMIT 1";
+    $col_check_res = $koneksi->query($col_check_sql);
+    $has_nomor_pelanggan = ($col_check_res && $col_check_res->num_rows > 0);
+
+    if ($has_nomor_pelanggan) {
+        $update_query = "UPDATE `$table_name` SET tagihan='$tagihan_escaped', status_bayar='$status_escaped', nomor_pelanggan='$nomor_pelanggan' WHERE id=$id";
+    } else {
+        // tabel tidak punya kolom nomor_pelanggan -> jangan sertakan kolom tersebut dalam UPDATE
+        $update_query = "UPDATE `$table_name` SET tagihan='$tagihan_escaped', status_bayar='$status_escaped' WHERE id=$id";
+    }
+
     // Debug: tampilkan query yang akan dieksekusi
     error_log("Update Query: $update_query");
-    
+
     if ($koneksi->query($update_query)) {
         // Update berhasil
         $success_message = "Data berhasil diperbarui";

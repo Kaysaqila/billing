@@ -10,7 +10,7 @@ if (!isset($_SESSION['login'])) {
 $table_name = 'pelanggan_jogja'; // default untuk jogja
 if (isset($_SESSION['wilayah'])) {
     if ($_SESSION['wilayah'] === 'samiran') {
-        $table_name = 'pelanggan_samiran';
+        $table_name = 'pelanggan_samiran_2';
     } elseif ($_SESSION['wilayah'] === 'godean') {
         $table_name = 'pelanggan_godean';
     }
@@ -97,49 +97,98 @@ ob_start();
             </td>
             <td>
                 <?php
-                // --- KODE FORMAT PESAN WHATSAPP ASLI DIKEMBALIKAN ---
+                // --- KODE FORMAT PESAN WHATSAPP (DIPISAH BERDASARKAN WILAYAH) ---
                 $tujuan = !empty($row['nomor_pelanggan']) ? $row['nomor_pelanggan'] : $nomor_admin;
 
                 $nama         = $row['nama'];
                 $id_pelanggan = $row['id_pelanggan'];
                 $paket        = $row['paket'];
                 $tagihan      = number_format($row['tagihan'], 0, ',', '.');
-                $awal_bulan   = date("1 F Y", strtotime($row['waktu']));
-                $akhir_bulan  = date("t F Y", strtotime($row['waktu']));
 
-                // Pesan tagihan (Format Asli yang Detail)
-                $pesan_tagihan = "Pelanggan Yth.\n".
-                "Bapak/Ibu/Sdr : $nama\n".
-                "--------------------------------------------\n".
-                "Informasi Pembayaran Layanan CLEON\n".
-                "Nomor Pelanggan : $id_pelanggan\n".
-                "Layanan : $paket\n".
-                "Periode Berjalan : $awal_bulan - $akhir_bulan\n".
-                "Jatuh Tempo : $akhir_bulan\n\n".
-                "TAGIHAN : Rp$tagihan,00\n".
-                "--------------------------------------------\n".
-                "Untuk transfer bisa melalui:\n".
-                "1) Bank Mandiri - No. rek 1370011667371 atas nama Eksan Wahyu Nugroho\n".
-                "2) Bank BCA - No. rek 8465356509 atas nama Eksan Wahyu Nugroho\n\n".
-                "Konfirmasikan pembayaran ke nomor wa.me/6281314152347;\n".
-                "Abaikan informasi ini jika anda telah melakukan pembayaran, Terima Kasih.";
+                // periode berjalan (awal dan akhir bulan dari kolom waktu)
+                $dt = new DateTime($row['waktu']);
+                $periode_awal = $dt->format('1 F Y'); // 1 <Month> <Year>
+                $periode_akhir = $dt->format('t F Y'); // last day of month
+
+                // bulan & tahun pembuatan invoice = bulan setelah periode berjalan
+                $dt_create = clone $dt;
+                $dt_create->modify('+1 month');
+                $invoice_month = (int)$dt_create->format('n'); // tanpa leading zero
+                $invoice_year_short = $dt_create->format('y'); // dua digit tahun
+
+                // invoice no: INV + padded id record (mengikuti id data) + /REG-C/{bulan}/{yy}
+                // gunakan id record ($row['id']) jika tersedia, jika tidak fallback ke id_pelanggan tanpa angka
+                $record_id = isset($row['id']) ? (int)$row['id'] : 0;
+                $invoice_no = $record_id > 0
+                    ? sprintf('INV%05d/REG-C/%d/%s', $record_id, $invoice_month, $invoice_year_short)
+                    : 'INV/' . ($id_pelanggan ?? '');
+
+                // coba ambil kode pelanggan jika ada kolomnya
+                $kode_pelanggan = $row['kode_pelanggan'] ?? ($row['kode'] ?? '');
+
+                if (isset($_SESSION['wilayah']) && $_SESSION['wilayah'] === 'samiran') {
+                    // Format pesan khusus Samiran 
+                    $pesan_tagihan = "Pelanggan Yth.\n".
+                    "Bapak/Ibu/Sdr : $nama\n".
+                    "-------------------------------------------\n".
+                    "Informasi Pembayaran Layanan CLEON \n".
+                    "Nomor Pelanggan : $id_pelanggan\n".
+                    (!empty($kode_pelanggan) ? "Kode Pelanggan : $kode_pelanggan\n" : "").
+                    "Nomor Invoice : $invoice_no\n".
+                    "Layanan : " . ($paket ?: 'Reguler CLEON') . "\n".
+                    "Periode Berjalan : $periode_awal - $periode_akhir\n".
+                    "Jatuh Tempo : " . date("j F Y", strtotime($dt_create->format('Y-m-20'))) . "\n".
+                    "Jumlah Tagihan : Rp$tagihan\n".
+                    "--------------------------------------------\n".
+                    "Untuk transfer bisa melalui:\n".
+                    "1) Bank BRI \n".
+                    "No. rek 321301024308535 Andik Darmawan\n".
+                    "Pembayaran juga dapat dilakukan secara tunai\n".
+                    "Konfirmasikan pembayaran ke nomor wa.me/6285162750755\n".
+                    "--------------------------------------------\n".
+                    "Pembayaran bulanan bisa melalui e wallet seperti :\n".
+                    "1) Dana, Gopay (085713461976) Laga Andika\n".
+                    "2) Shopeepay (085741571679) Laga Andika\n".
+                    "--------------------------------------------\n".
+                    "Abaikan informasi ini jika anda telah melakukan pembayaran, Terima Kasih";
+                } else {
+                    // Pesan default untuk wilayah lain (asli)
+                    $awal_bulan   = date("1 F Y", strtotime($row['waktu']));
+                    $akhir_bulan  = date("t F Y", strtotime($row['waktu']));
+
+                    $pesan_tagihan = "Pelanggan Yth.\n".
+                    "Bapak/Ibu/Sdr : $nama\n".
+                    "--------------------------------------------\n".
+                    "Informasi Pembayaran Layanan CLEON\n".
+                    "Nomor Pelanggan : $id_pelanggan\n".
+                    "Layanan : $paket\n".
+                    "Periode Berjalan : $awal_bulan - $akhir_bulan\n".
+                    "Jatuh Tempo : $akhir_bulan\n\n".
+                    "TAGIHAN : Rp$tagihan,00\n".
+                    "--------------------------------------------\n".
+                    "Untuk transfer bisa melalui:\n".
+                    "1) Bank Mandiri - No. rek 1370011667371 atas nama Eksan Wahyu Nugroho\n".
+                    "2) Bank BCA - No. rek 8465356509 atas nama Eksan Wahyu Nugroho\n\n".
+                    "Konfirmasikan pembayaran ke nomor wa.me/6281314152347;\n".
+                    "Abaikan informasi ini jika anda telah melakukan pembayaran, Terima Kasih.";
+                }
 
                 $pesan_tagihan_encode = urlencode($pesan_tagihan);
 
-                // Pesan resi (Format Asli yang Detail)
+                // pesan resi 
                 $tanggal_bayar = date("j F Y");
                 $pesan_resi = "Pelanggan CLEON Yth,\n".
-                "Bapak/Ibu/Sdr : $nama\n".
-                "Terima kasih telah memilih CLEON.\n".
-                "Pembayaran di bawah ini sudah terkonfirmasi :\n".
-                "------------------------------------------------\n".
-                "No Pelanggan : $id_pelanggan\n".
-                "Periode : $awal_bulan - $akhir_bulan\n".
-                "Total : Rp$tagihan,00\n".
-                "Tgl Bayar : $tanggal_bayar\n".
-                "Layanan : $paket\n\n".
-                "--------------------------------------------\n".
-                "Terimakasih sudah berlangganan CLEON.";
+                    "Bapak/Ibu/Sdr : $nama\n".
+                    "Terima kasih telah memilih CLEON.\n".
+                    "Pembayaran di bawah ini sudah terkonfirmasi :\n".
+                    "------------------------------------------------\n".
+                    "No Pelanggan : $id_pelanggan\n".
+                    "Periode : $periode_awal - $periode_akhir\n".
+                    "Total : Rp$tagihan,00\n".
+                    "Tgl Bayar : $tanggal_bayar\n".
+                    "Layanan : $paket\n\n".
+                    "--------------------------------------------\n".
+                    "Terimakasih sudah berlangganan CLEON.";
 
                 $pesan_resi_encode = urlencode($pesan_resi);
                 ?>

@@ -29,7 +29,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 header("Location: dashboard_godean.php");
             } else {
                 // fallback default
-                header("Location: index.php");
+                header("Location: dahsboard_jogja.php");
             }
             exit;
         } else {

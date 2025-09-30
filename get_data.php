@@ -72,6 +72,7 @@ ob_start();
                 <th>Alamat</th>
             <?php endif; ?>
             <th>Paket</th>
+            <th>Masa Aktif</th>
             <th>Bulan</th>
             <th>Tagihan</th>
             <th>Status</th>
@@ -93,6 +94,7 @@ ob_start();
                 <td class="muted"><?= htmlspecialchars($row['alamat'] ?? ''); ?></td>
             <?php endif; ?>
             <td><?= htmlspecialchars($row['paket']); ?></td>
+            <td class="muted"><?= (!empty($row['langganan_aktif_hingga']) ? htmlspecialchars(date("j F Y", strtotime($row['langganan_aktif_hingga']))) : '-'); ?></td>
             <td><?= date("F Y", strtotime($row['waktu'])); ?></td>
             <td><strong>Rp<?= number_format($row['tagihan'],0,',','.'); ?></strong></td>
             <td>
@@ -102,7 +104,7 @@ ob_start();
                     <span class="badge badge-danger" onclick="updateStatus(<?= $row['id']; ?>, 'Belum Lunas')" title="Klik untuk ubah status">Belum Lunas</span>
                 <?php endif; ?>
             </td>
-            <td>
+            <td class="actions-cell">
                 <?php
                 // --- KODE FORMAT PESAN WHATSAPP (DIPISAH BERDASARKAN WILAYAH) ---
                 $tujuan = !empty($row['nomor_pelanggan']) ? $row['nomor_pelanggan'] : $nomor_admin;
@@ -203,19 +205,21 @@ ob_start();
 
                 $pesan_resi_encode = urlencode($pesan_resi);
                 ?>
-                <a href="https://wa.me/<?= $tujuan ?>?text=<?= $pesan_tagihan_encode ?>" target="_blank"><button class="action-btn btn-tagihan">Kirim Tagihan</button></a>
-                <button class="action-btn btn-resi" onclick="sendReceipt(<?= $row['id']; ?>, '<?= $tujuan; ?>', '<?= $pesan_resi_encode; ?>')">Kirim Resi</button>
-                <button class="action-btn btn-edit" onclick="openEditModal(<?= $row['id']; ?>)">Edit</button>
+                <div class="action-row">
+                    <a href="https://wa.me/<?= $tujuan ?>?text=<?= $pesan_tagihan_encode ?>" target="_blank"><button class="action-btn btn-tagihan">Kirim Tagihan</button></a>
+                    <button class="action-btn btn-resi" onclick="sendReceipt(<?= $row['id']; ?>, '<?= $tujuan; ?>', '<?= $pesan_resi_encode; ?>')">Kirim Resi</button>
+                    <button class="action-btn btn-edit" onclick="openEditModal(<?= $row['id']; ?>)">Edit</button>
+                </div>
             </td>
         </tr>
         <?php endwhile; ?>
     <?php else: ?>
-        <?php
-        // hitung colspan sesuai dengan apakah kolom alamat ditampilkan
-        $colspan = 8; // default
-        if (isset($_SESSION['wilayah']) && $_SESSION['wilayah'] === 'godean') $colspan = 9;
-        ?>
-        <tr><td colspan="<?= $colspan; ?>" style="text-align:center; padding:30px; color: #6c757d;">Tidak ada data ditemukan.</td></tr>
+    <?php
+    // hitung colspan sesuai dengan apakah kolom alamat ditampilkan
+    $colspan = 9; // default (added Masa Aktif)
+    if (isset($_SESSION['wilayah']) && $_SESSION['wilayah'] === 'godean') $colspan = 10;
+    ?>
+    <tr><td colspan="<?= $colspan; ?>" style="text-align:center; padding:30px; color: #6c757d;">Tidak ada data ditemukan.</td></tr>
     <?php endif; ?>
     </tbody>
 </table>

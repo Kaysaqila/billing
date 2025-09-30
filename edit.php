@@ -50,10 +50,17 @@ $col_check_sql_alamat = "SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SC
 $col_check_res_alamat = $koneksi->query($col_check_sql_alamat);
 $has_alamat = ($col_check_res_alamat && $col_check_res_alamat->num_rows > 0);
 
+// Cek apakah tabel punya kolom 'langganan_aktif_hingga'
+$col_check_sql_masa = "SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '$escaped_table' AND COLUMN_NAME = 'langganan_aktif_hingga' LIMIT 1";
+$col_check_res_masa = $koneksi->query($col_check_sql_masa);
+$has_langganan_aktif_hingga = ($col_check_res_masa && $col_check_res_masa->num_rows > 0);
+
 // kalau tombol update ditekan
 if (isset($_POST['update'])) {
     $tagihan = $_POST['tagihan'];
     $status = $_POST['status_bayar'];
+    // terima value masa aktif jika tersedia
+    $langganan_aktif_hingga = isset($_POST['langganan_aktif_hingga']) ? $koneksi->real_escape_string($_POST['langganan_aktif_hingga']) : null;
     $nomor_pelanggan = isset($_POST['nomor_pelanggan']) ? $koneksi->real_escape_string($_POST['nomor_pelanggan']) : '';
     $alamat = isset($_POST['alamat']) ? $koneksi->real_escape_string($_POST['alamat']) : '';
     
@@ -87,6 +94,16 @@ if (isset($_POST['update'])) {
     }
     if ($has_alamat) {
         $assignments[] = "alamat='$alamat'";
+    }
+    if ($has_langganan_aktif_hingga && $langganan_aktif_hingga !== null) {
+        // simpan format YYYY-MM ke tipe DATE or VARCHAR sesuai skema; kita simpan sebagai akhir bulan (YYYY-MM-01) jika kolom DATE
+        // Coba deteksi apakah value dalam format YYYY-MM
+        if (preg_match('/^\d{4}-\d{2}$/', $langganan_aktif_hingga)) {
+            // simpan sebagai YYYY-MM-01 agar kompatibel dengan DATE/TIMESTAMP
+            $assignments[] = "langganan_aktif_hingga='" . $langganan_aktif_hingga . "-01'";
+        } else {
+            $assignments[] = "langganan_aktif_hingga='" . $langganan_aktif_hingga . "'";
+        }
     }
 
     $update_query = "UPDATE `$table_name` SET " . implode(', ', $assignments) . " WHERE id=$id";
@@ -262,6 +279,95 @@ if (isset($_POST['update'])) {
                         </div>
                     </div>
 
+                    <div class="grid" style="margin-top:12px">
+                        <?php if ($has_langganan_aktif_hingga):
+                            // Jika kolom ada, coba ambil nilai dan ubah ke format YYYY-MM untuk input[type=month]
+                            $masa_value = '';
+                            if (!empty($data['langganan_aktif_hingga'])) {
+                                // dukung format YYYY-MM-DD atau YYYY-MM
+                                if (preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $data['langganan_aktif_hingga'], $m)) {
+                                    $masa_value = $m[1] . '-' . $m[2];
+                                } elseif (preg_match('/^(\d{4})-(\d{2})$/', $data['langganan_aktif_hingga'], $m2)) {
+                                    $masa_value = $m2[1] . '-' . $m2[2];
+                                }
+                            }
+                        ?>
+                        <div class="col">
+                            <label class="small">Masa Aktif Langganan</label>
+                            <?php
+                                // Siapkan nilai tahun/bulan untuk fallback select
+                                $masa_year = '';
+                                $masa_month = '';
+                                if (!empty($masa_value) && preg_match('/^(\d{4})-(\d{2})$/', $masa_value, $mm)) {
+                                    $masa_year = $mm[1];
+                                    $masa_month = $mm[2];
+                                } else {
+                                    $masa_year = date('Y');
+                                    $masa_month = date('m');
+                                }
+                                
+                                $months = [
+                                    "01"=>"Januari", "02"=>"Februari", "03"=>"Maret", "04"=>"April",
+                                    "05"=>"Mei", "06"=>"Juni", "07"=>"Juli", "08"=>"Agustus",
+                                    "09"=>"September", "10"=>"Oktober", "11"=>"November", "12"=>"Desember"
+                                ];
+                                
+                                $current_year = date('Y');
+                                $years = [];
+                                for ($y = $current_year - 2; $y <= $current_year + 3; $y++) {
+                                    $years[] = $y;
+                                }
+                            ?>
+                            
+                            <!-- Modern month input (HTML5) -->
+                            <input type="month" id="masa-month" value="<?= htmlspecialchars($masa_value) ?>" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #e6eef6;background:#fff;box-sizing:border-box">
+
+                            <!-- Fallback selects (hidden by default, shown when input[type=month] not supported) -->
+                            <div id="masa-fallback" style="display:none;margin-top:12px">
+                                <div class="grid">
+                                    <!-- Bulan -->
+                                    <div class="col">
+                                        <label class="small">Bulan</label>
+                                        <select class="month-select" name="langganan_bulan" id="masa-month-select">
+                                            <option value="">Pilih Bulan</option>
+                                            <?php foreach ($months as $num => $label): ?>
+                                                <option value="<?= $num ?>" <?= $masa_month === $num ? 'selected' : '' ?> >
+                                                    <?= $label ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
+
+                                    <!-- Tahun -->
+                                    <div class="col">
+                                        <label class="small">Tahun</label>
+                                        <select class="year-select" name="langganan_tahun" id="masa-year-select">
+                                            <option value="">Pilih Tahun</option>
+                                            <?php foreach ($years as $year): ?>
+                                                <option value="<?= $year ?>" <?= $masa_year == $year ? 'selected' : '' ?>>
+                                                    <?= $year ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Hidden input untuk menyimpan nilai format YYYY-MM (dikirim ke server) -->
+                            <input type="hidden" name="langganan_aktif_hingga" id="masa-hidden" value="<?= htmlspecialchars($masa_value) ?>">
+                            </div>
+                            
+                        </div>
+                        <?php else: ?>
+                        <div class="col">
+                            <label class="small">Masa Aktif Langganan</label>
+                            <div class="field" aria-readonly="true">
+                                <?= !empty($data['langganan_aktif_hingga']) ? htmlspecialchars($data['langganan_aktif_hingga']) : '-' ?>
+                            </div>
+                        </div>
+                        <?php endif; ?>
+                    </div>
+
                     <div class="note">Ubah nilai tagihan dan status, lalu klik Update untuk menyimpan.</div>
 
                     <div class="actions">
@@ -290,22 +396,65 @@ if (isset($_POST['update'])) {
         } catch(e){}
         
         // Logika untuk mengubah status otomatis berdasarkan tagihan
-        document.querySelector('input[name="tagihan"]').addEventListener('input', function() {
-            const tagihan = parseFloat(this.value) || 0;
-            const statusSelect = document.querySelector('select[name="status_bayar"]');
-            
-            if (tagihan > 0 && statusSelect.value === 'Lunas') {
-                statusSelect.value = 'Belum Lunas';
+        (function(){
+            var tagihanInput = document.querySelector('input[name="tagihan"]');
+            var statusSelect = document.querySelector('select[name="status_bayar"]');
+            if (tagihanInput && statusSelect) {
+                tagihanInput.addEventListener('input', function() {
+                    const tagihan = parseFloat(this.value) || 0;
+                    if (tagihan > 0 && statusSelect.value === 'Lunas') {
+                        statusSelect.value = 'Belum Lunas';
+                    }
+                });
+
+                statusSelect.addEventListener('change', function() {
+                    if (this.value === 'Lunas') {
+                        tagihanInput.value = '0';
+                    }
+                });
             }
-        });
-        
-        document.querySelector('select[name="status_bayar"]').addEventListener('change', function() {
-            const tagihanInput = document.querySelector('input[name="tagihan"]');
-            
-            if (this.value === 'Lunas') {
-                tagihanInput.value = '0';
-            }
-        });
+
+            // Month input support detection and fallback
+            try {
+                var monthInput = document.getElementById('masa-month');
+                var fallback = document.getElementById('masa-fallback');
+                var hiddenMasa = document.getElementById('masa-hidden');
+                if (monthInput) {
+                    var isSupported = (function(){
+                        var input = document.createElement('input');
+                        input.setAttribute('type','month');
+                        return input.type === 'month';
+                    })();
+
+                    if (!isSupported) {
+                        // tampilkan fallback selects dan sinkronkan
+                        fallback.style.display = 'block';
+                        monthInput.style.display = 'none';
+                        var monthSel = document.getElementById('masa-month-select');
+                        var yearSel = document.getElementById('masa-year-select');
+                        // inisialisasi hidden dari selects
+                        function syncHidden(){
+                            var m = monthSel.value;
+                            var y = yearSel.value;
+                            if (y && m) hiddenMasa.value = y + '-' + m; else hiddenMasa.value = '';
+                        }
+                        monthSel.addEventListener('change', syncHidden);
+                        yearSel.addEventListener('change', syncHidden);
+                        // set initial
+                        syncHidden();
+                    } else {
+                        // Jika didukung, pastikan hidden mencerminkan nilai bulan yang dipilih
+                        if (hiddenMasa) {
+                            monthInput.addEventListener('change', function(){
+                                hiddenMasa.value = this.value;
+                            });
+                            // set awal
+                            hiddenMasa.value = monthInput.value || hiddenMasa.value || '';
+                        }
+                    }
+                }
+            } catch(e){ console.warn('Masa aktif script error', e); }
+        })();
     </script>
 </body>
 </html>

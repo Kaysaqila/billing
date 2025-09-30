@@ -1,7 +1,7 @@
 <?php
 $host = 'localhost';  // Ganti sesuai host Anda
 $username = 'root';   // Ganti sesuai username database Anda
-$password = '';       // Ganti sesuai password database Anda
+$password = '123';       // Ganti sesuai password database Anda
 $dbname = 'billing'; // Ganti sesuai nama database Anda
 
 // Koneksi ke database

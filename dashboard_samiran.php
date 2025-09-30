@@ -218,14 +218,15 @@ if (!isset($_SESSION['wilayah']) || $_SESSION['wilayah'] !== 'samiran') {
             /* Ganti border agar serasi dengan background biru */
             border-bottom: 2px solid #2980b9; 
         }
-        .modern-table th:nth-child(1) { width: 5%; }   /* No */
-        .modern-table th:nth-child(2) { width: 15%; }  /* ID Pelanggan */
-        .modern-table th:nth-child(3) { width: 15%; }  /* Nama Pelanggan */
-        .modern-table th:nth-child(4),
-        .modern-table th:nth-child(5),
-        .modern-table th:nth-child(6) { width: 10%; } /* Paket, Bulan, Tagihan */
-        .modern-table th:nth-child(7) { width: 10%; }   /* Status */
-        .modern-table th:nth-child(8) { width: 27%; min-width: 240px;} /* Aksi, dengan lebar minimum */
+    .modern-table th:nth-child(1) { width: 5%; }   /* No */
+    .modern-table th:nth-child(2) { width: 12%; }  /* ID Pelanggan */
+    .modern-table th:nth-child(3) { width: 14%; }  /* Nama Pelanggan */
+    .modern-table th:nth-child(4) { width: 12%; }  /* Paket */
+    .modern-table th:nth-child(5) { width: 12%; }  /* Masa Aktif */
+    .modern-table th:nth-child(6) { width: 10%; }  /* Bulan */
+    .modern-table th:nth-child(7) { width: 10%; }   /* Tagihan */
+    .modern-table th:nth-child(8) { width: 10%; }   /* Status */
+    .modern-table th:nth-child(9) { width: 25%; min-width: 240px;} /* Aksi, dengan lebar minimum */
         .modern-table td { padding: 14px 18px; border-bottom: 1px solid var(--light-gray); vertical-align: middle; color: #333; word-wrap: break-word; }
         .id-pill { display: inline-block; padding: 6px 10px; background: var(--light-gray); border-radius: 15px; color: var(--secondary); font-weight: 600; font-size: 13px; }
         .name-cell { font-weight: 600; color: var(--dark); }
@@ -234,7 +235,7 @@ if (!isset($_SESSION['wilayah']) || $_SESSION['wilayah'] !== 'samiran') {
         .badge:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
         .badge-success { background: var(--success); }
         .badge-danger { background: var(--danger); }
-        .action-btn { padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: all 140ms ease; color: #fff; text-decoration: none; margin-bottom: 4px; }
+    .action-btn { padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: all 140ms ease; color: #fff; text-decoration: none; margin: 6px 4px; }
         .action-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
         .btn-tagihan { background: var(--success); }
         .btn-resi { background: var(--warning); }
@@ -263,6 +264,16 @@ if (!isset($_SESSION['wilayah']) || $_SESSION['wilayah'] !== 'samiran') {
             align-items: center;
             gap: 15px;
         }
+
+        .modern-table td.actions-cell {
+            display: flex;
+            flex-direction: row;
+            justify-content: flex-start;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+        .modern-table td.actions-cell .action-row { display: inline-flex; gap: 8px; }
 
         .btn-create {
             background: var(--primary); /* Warna biru agar serasi dengan tombol Edit */
@@ -401,10 +412,11 @@ if (!isset($_SESSION['wilayah']) || $_SESSION['wilayah'] !== 'samiran') {
     .modern-table td:nth-of-type(2)::before { content: "ID Pelanggan"; }
     .modern-table td:nth-of-type(3)::before { content: "Nama Pelanggan"; }
     .modern-table td:nth-of-type(4)::before { content: "Paket"; }
-    .modern-table td:nth-of-type(5)::before { content: "Bulan"; }
-    .modern-table td:nth-of-type(6)::before { content: "Tagihan"; }
-    .modern-table td:nth-of-type(7)::before { content: "Status"; }
-    .modern-table td:nth-of-type(8)::before { content: "Aksi"; }
+    .modern-table td:nth-of-type(5)::before { content: "Masa Aktif"; }
+    .modern-table td:nth-of-type(6)::before { content: "Bulan"; }
+    .modern-table td:nth-of-type(7)::before { content: "Tagihan"; }
+    .modern-table td:nth-of-type(8)::before { content: "Status"; }
+    .modern-table td:nth-of-type(9)::before { content: "Aksi"; }
 
     /* Penyesuaian untuk sel yang kontennya kompleks */
     .modern-table td .id-pill,
@@ -415,7 +427,8 @@ if (!isset($_SESSION['wilayah']) || $_SESSION['wilayah'] !== 'samiran') {
     .modern-table td .muted {
         text-align: right;
     }
-    .modern-table td:nth-of-type(8) .action-btn {
+    .name-cell { display: block; word-break: break-word; overflow-wrap: anywhere; text-align: left; padding: 6px 0; border-bottom: none; }
+    .modern-table td:nth-of-type(9) .action-btn {
        margin-bottom: 5px;
     }
     
@@ -471,6 +484,7 @@ if (!isset($_SESSION['wilayah']) || $_SESSION['wilayah'] !== 'samiran') {
         .modern-table td .muted {
             text-align: left;
         }
+        .name-cell { word-break: break-word; overflow-wrap: anywhere; }
     }
     </style>
 </head>

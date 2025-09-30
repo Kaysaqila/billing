@@ -67,11 +67,14 @@ ob_start();
             <th>No</th>
             <th>ID Pelanggan</th>
             <th>Nama Pelanggan</th>
+            <!-- Tampilkan kolom Alamat hanya untuk wilayah Godean -->
+            <?php if (isset($_SESSION['wilayah']) && $_SESSION['wilayah'] === 'godean'): ?>
+                <th>Alamat</th>
+            <?php endif; ?>
             <th>Paket</th>
             <th>Bulan</th>
             <th>Tagihan</th>
             <th>Status</th>
-            <th>Durasi</th>
             <th>Aksi</th>
         </tr>
     </thead>
@@ -84,8 +87,11 @@ ob_start();
             <td><span class="id-pill"><?= htmlspecialchars($row['id_pelanggan']); ?></span></td>
             <td>
                 <div class="name-cell"><?= htmlspecialchars($row['nama']); ?></div>
-                <div class="muted"><?= htmlspecialchars($row['alamat'] ?? ''); ?></div>
             </td>
+            <!-- Jika wilayah Godean, tampilkan kolom alamat terpisah -->
+            <?php if (isset($_SESSION['wilayah']) && $_SESSION['wilayah'] === 'godean'): ?>
+                <td class="muted"><?= htmlspecialchars($row['alamat'] ?? ''); ?></td>
+            <?php endif; ?>
             <td><?= htmlspecialchars($row['paket']); ?></td>
             <td><?= date("F Y", strtotime($row['waktu'])); ?></td>
             <td><strong>Rp<?= number_format($row['tagihan'],0,',','.'); ?></strong></td>
@@ -204,7 +210,12 @@ ob_start();
         </tr>
         <?php endwhile; ?>
     <?php else: ?>
-        <tr><td colspan="8" style="text-align:center; padding:30px; color: #6c757d;">Tidak ada data ditemukan.</td></tr>
+        <?php
+        // hitung colspan sesuai dengan apakah kolom alamat ditampilkan
+        $colspan = 8; // default
+        if (isset($_SESSION['wilayah']) && $_SESSION['wilayah'] === 'godean') $colspan = 9;
+        ?>
+        <tr><td colspan="<?= $colspan; ?>" style="text-align:center; padding:30px; color: #6c757d;">Tidak ada data ditemukan.</td></tr>
     <?php endif; ?>
     </tbody>
 </table>

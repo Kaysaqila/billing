@@ -217,14 +217,15 @@ if (!isset($_SESSION['wilayah']) || $_SESSION['wilayah'] !== 'godean') {
             /* Ganti border agar serasi dengan background biru */
             border-bottom: 2px solid #2980b9; 
         }
-        .modern-table th:nth-child(1) { width: 5%; }   /* No */
-        .modern-table th:nth-child(2) { width: 15%; }  /* ID Pelanggan */
-        .modern-table th:nth-child(3) { width: 15%; }  /* Nama Pelanggan */
-        .modern-table th:nth-child(4),
-        .modern-table th:nth-child(5),
-        .modern-table th:nth-child(6) { width: 10%; } /* Paket, Bulan, Tagihan */
-        .modern-table th:nth-child(7) { width: 10%; }   /* Status */
-        .modern-table th:nth-child(8) { width: 27%; min-width: 240px;} /* Aksi, dengan lebar minimum */
+    .modern-table th:nth-child(1) { width: 5%; }   /* No */
+    .modern-table th:nth-child(2) { width: 10%; }  /* ID Pelanggan */
+    .modern-table th:nth-child(3) { width: 10%; }  /* Nama Pelanggan */
+    .modern-table th:nth-child(4) { width: 10%; }  /* Alamat (Godean) */
+    .modern-table th:nth-child(5),
+    .modern-table th:nth-child(6),
+    .modern-table th:nth-child(7) { width: 10%; } /* Paket, Bulan, Tagihan */
+    .modern-table th:nth-child(8) { width: 10%; }   /* Status */
+    .modern-table th:nth-child(9) { width: 25%; min-width: 240px;} /* Aksi / Durasi + Aksi area, dengan lebar minimum */
         .modern-table td { padding: 14px 18px; border-bottom: 1px solid var(--light-gray); vertical-align: middle; color: #333; word-wrap: break-word; }
         .id-pill { display: inline-block; padding: 6px 10px; background: var(--light-gray); border-radius: 15px; color: var(--secondary); font-weight: 600; font-size: 13px; }
         .name-cell { font-weight: 600; color: var(--dark); }
@@ -414,9 +415,9 @@ if (!isset($_SESSION['wilayah']) || $_SESSION['wilayah'] !== 'godean') {
     .modern-table td .muted {
         text-align: right;
     }
-    .modern-table td:nth-of-type(8) .action-btn {
-       margin-bottom: 5px;
-    }
+     .modern-table td:nth-of-type(9) .action-btn {
+         margin-bottom: 5px;
+     }
     
     /* Membuat form di dalam modal menjadi responsif */
     #add-modal .grid,

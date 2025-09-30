@@ -26,12 +26,12 @@ if (isset($_SESSION['wilayah'])) {
     }
 }
 
-// Ambil dan bersihkan data dari form
-$id_pelanggan = $koneksi->real_escape_string($_POST['id_pelanggan']);
-$nama = $koneksi->real_escape_string($_POST['nama']);
-$paket = $koneksi->real_escape_string($_POST['paket']);
-$nomor_pelanggan = $koneksi->real_escape_string($_POST['nomor_pelanggan']);
-$tagihan = (float)$_POST['tagihan'];
+// Ambil data dari POST dengan pemeriksaan isset
+$id_pelanggan = isset($_POST['id_pelanggan']) ? trim($_POST['id_pelanggan']) : null;
+$nama = isset($_POST['nama']) ? trim($_POST['nama']) : '';
+$paket = isset($_POST['paket']) ? trim($_POST['paket']) : '';
+$nomor_pelanggan = isset($_POST['nomor_pelanggan']) ? trim($_POST['nomor_pelanggan']) : null;
+$tagihan = isset($_POST['tagihan']) ? (float)$_POST['tagihan'] : 0;
 $waktu = date('Y-m-d H:i:s'); // Waktu saat ini
 
 // Validasi sederhana
@@ -40,17 +40,79 @@ if (empty($nama) || empty($paket)) {
     exit;
 }
 
-// Status bayar akan diatur otomatis oleh trigger database
-// berdasarkan nilai tagihan. Jadi kita tidak perlu set di sini.
+// Periksa kolom yang tersedia di tabel (nomor_pelanggan, alamat)
+$colsQuery = $koneksi->prepare("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?");
+$dbName = $koneksi->real_escape_string($koneksi->query("SELECT DATABASE() as db")->fetch_object()->db);
+$colsQuery->bind_param('ss', $dbName, $table_name);
+$colsQuery->execute();
+$resultCols = $colsQuery->get_result();
+$availableCols = [];
+while ($row = $resultCols->fetch_assoc()) {
+    $availableCols[] = $row['COLUMN_NAME'];
+}
+$colsQuery->close();
 
-$sql = "INSERT INTO $table_name (id_pelanggan, nama, paket, waktu, tagihan, nomor_pelanggan) 
-        VALUES ('$id_pelanggan', '$nama', '$paket', '$waktu', '$tagihan', '$nomor_pelanggan')";
+$has_nomor = in_array('nomor_pelanggan', $availableCols);
+$has_alamat = in_array('alamat', $availableCols);
 
-if ($koneksi->query($sql)) {
-    echo json_encode(['success' => true]);
-} else {
-    echo json_encode(['success' => false, 'message' => 'Gagal menyimpan ke database: ' . $koneksi->error]);
+// Build INSERT statement dynamically depending on available columns
+$columns = ['nama', 'paket', 'waktu', 'tagihan'];
+$placeholders = ['?', '?', '?', '?'];
+$types = 'sssd';
+$values = [$nama, $paket, $waktu, $tagihan];
+
+if ($id_pelanggan !== null && $id_pelanggan !== '') {
+    array_unshift($columns, 'id_pelanggan');
+    array_unshift($placeholders, '?');
+    $types = 's' . $types;
+    array_unshift($values, $id_pelanggan);
 }
 
+if ($has_nomor) {
+    $columns[] = 'nomor_pelanggan';
+    $placeholders[] = '?';
+    $types .= 's';
+    $values[] = $nomor_pelanggan;
+}
+
+if ($has_alamat && isset($_POST['alamat'])) {
+    $alamat = trim($_POST['alamat']);
+    $columns[] = 'alamat';
+    $placeholders[] = '?';
+    $types .= 's';
+    $values[] = $alamat;
+}
+
+$colList = implode(', ', $columns);
+$phList = implode(', ', $placeholders);
+
+$sql = "INSERT INTO $table_name ($colList) VALUES ($phList)";
+
+$stmt = $koneksi->prepare($sql);
+if (!$stmt) {
+    error_log('Prepare failed: ' . $koneksi->error);
+    echo json_encode(['success' => false, 'message' => 'Gagal menyiapkan query: ' . $koneksi->error]);
+    exit;
+}
+
+// bind params dynamically
+$bind_names[] = $types;
+for ($i = 0; $i < count($values); $i++) {
+    $bind_name = 'bind' . $i;
+    $$bind_name = $values[$i];
+    $bind_names[] = &$$bind_name;
+}
+
+call_user_func_array([$stmt, 'bind_param'], $bind_names);
+
+if ($stmt->execute()) {
+    echo json_encode(['success' => true, 'message' => 'Data berhasil ditambahkan.']);
+} else {
+    error_log('Execute failed: ' . $stmt->error . ' SQL: ' . $sql);
+    echo json_encode(['success' => false, 'message' => 'Gagal menyimpan ke database: ' . $stmt->error]);
+}
+
+$stmt->close();
 $koneksi->close();
+exit;
 ?>

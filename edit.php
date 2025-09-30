@@ -40,11 +40,22 @@ if ($result->num_rows === 0) {
 
 $data = $result->fetch_assoc();
 
+// Cek apakah tabel punya kolom 'nomor_pelanggan' dan 'alamat'
+$escaped_table = $koneksi->real_escape_string($table_name);
+$col_check_sql_nomor = "SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '$escaped_table' AND COLUMN_NAME = 'nomor_pelanggan' LIMIT 1";
+$col_check_res_nomor = $koneksi->query($col_check_sql_nomor);
+$has_nomor_pelanggan = ($col_check_res_nomor && $col_check_res_nomor->num_rows > 0);
+
+$col_check_sql_alamat = "SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '$escaped_table' AND COLUMN_NAME = 'alamat' LIMIT 1";
+$col_check_res_alamat = $koneksi->query($col_check_sql_alamat);
+$has_alamat = ($col_check_res_alamat && $col_check_res_alamat->num_rows > 0);
+
 // kalau tombol update ditekan
 if (isset($_POST['update'])) {
     $tagihan = $_POST['tagihan'];
     $status = $_POST['status_bayar'];
     $nomor_pelanggan = isset($_POST['nomor_pelanggan']) ? $koneksi->real_escape_string($_POST['nomor_pelanggan']) : '';
+    $alamat = isset($_POST['alamat']) ? $koneksi->real_escape_string($_POST['alamat']) : '';
     
     // Debug: tampilkan nilai yang diterima
     error_log("Edit Debug - ID: $id, Table: $table_name, Tagihan: $tagihan, Status: $status, Nomor: $nomor_pelanggan");
@@ -67,18 +78,18 @@ if (isset($_POST['update'])) {
     $tagihan_escaped = $koneksi->real_escape_string($tagihan);
     $status_escaped = $koneksi->real_escape_string($status);
     
-    // Cek apakah kolom nomor_pelanggan ada di tabel yang sedang digunakan
-    $escaped_table = $koneksi->real_escape_string($table_name);
-    $col_check_sql = "SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '$escaped_table' AND COLUMN_NAME = 'nomor_pelanggan' LIMIT 1";
-    $col_check_res = $koneksi->query($col_check_sql);
-    $has_nomor_pelanggan = ($col_check_res && $col_check_res->num_rows > 0);
-
+    // Bangun assignment untuk UPDATE secara dinamis (hanya kolom yang ada)
+    $assignments = [];
+    $assignments[] = "tagihan='$tagihan_escaped'";
+    $assignments[] = "status_bayar='$status_escaped'";
     if ($has_nomor_pelanggan) {
-        $update_query = "UPDATE `$table_name` SET tagihan='$tagihan_escaped', status_bayar='$status_escaped', nomor_pelanggan='$nomor_pelanggan' WHERE id=$id";
-    } else {
-        // tabel tidak punya kolom nomor_pelanggan -> jangan sertakan kolom tersebut dalam UPDATE
-        $update_query = "UPDATE `$table_name` SET tagihan='$tagihan_escaped', status_bayar='$status_escaped' WHERE id=$id";
+        $assignments[] = "nomor_pelanggan='$nomor_pelanggan'";
     }
+    if ($has_alamat) {
+        $assignments[] = "alamat='$alamat'";
+    }
+
+    $update_query = "UPDATE `$table_name` SET " . implode(', ', $assignments) . " WHERE id=$id";
 
     // Debug: tampilkan query yang akan dieksekusi
     error_log("Update Query: $update_query");
@@ -218,6 +229,12 @@ if (isset($_POST['update'])) {
                             <label class="small">Nomor Pelanggan</label>
                             <input type="text" name="nomor_pelanggan" value="<?= htmlspecialchars(isset($data['nomor_pelanggan']) ? $data['nomor_pelanggan'] : ''); ?>">
                         </div>
+                        <?php if (isset($_SESSION['wilayah']) && $_SESSION['wilayah'] === 'godean' && $has_alamat): ?>
+                        <div class="col">
+                            <label class="small">Alamat</label>
+                            <input type="text" name="alamat" value="<?= htmlspecialchars(isset($data['alamat']) ? $data['alamat'] : ''); ?>">
+                        </div>
+                        <?php endif; ?>
                     </div>
 
                     <div class="grid" style="margin-top:12px">

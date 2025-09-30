@@ -240,7 +240,7 @@ if (!isset($_SESSION['wilayah']) || $_SESSION['wilayah'] !== 'godean') {
         .btn-edit { background: var(--primary); }
 
         /* Pagination & Modal Styles (Unchanged) */
-        .pagination { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 30px; }
+    .pagination { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 30px; margin-bottom: 40px; }
         .pagination button { padding: 10px 16px; background-color: white; color: var(--dark); border: 1px solid var(--light-gray); border-radius: 6px; cursor: pointer; transition: all 0.2s ease; }
         .pagination button:hover:not(:disabled) { background-color: var(--primary); color: white; border-color: var(--primary); }
         .pagination button:disabled { opacity: 0.6; cursor: not-allowed; }
@@ -545,6 +545,10 @@ if (!isset($_SESSION['wilayah']) || $_SESSION['wilayah'] !== 'godean') {
                                     <label class="small">Nama Lengkap</label>
                                     <input type="text" name="nama" required>
                                 </div>
+                                <div class="col">
+                                    <label class="small">Alamat</label>
+                                    <input type="text" name="alamat" required>
+                                </div>
                             </div>
                             <div class="grid" style="margin-top:12px">
                                 <div class="col">
@@ -776,19 +780,28 @@ if (!isset($_SESSION['wilayah']) || $_SESSION['wilayah'] !== 'godean') {
                 method: 'POST',
                 body: formData
             })
-            .then(response => response.json())
+            .then(async response => {
+                const text = await response.text();
+                let data = null;
+                try { data = JSON.parse(text); } catch(e) { data = null; }
+                if (!response.ok) {
+                    const msg = data && data.message ? data.message : (text || 'Terjadi kesalahan server');
+                    throw new Error(msg);
+                }
+                return data;
+            })
             .then(data => {
-                if (data.success) {
-                    Swal.fire('Berhasil!', 'Data pelanggan baru telah ditambahkan.', 'success');
+                if (data && data.success) {
+                    Swal.fire('Berhasil!', data.message || 'Data pelanggan baru telah ditambahkan.', 'success');
                     closeAddModal();
                     loadData(1, '', currentFilter); // Muat ulang data ke halaman pertama
                     loadStats(); // Muat ulang statistik
                 } else {
-                    Swal.fire('Gagal!', data.message || 'Terjadi kesalahan.', 'error');
+                    Swal.fire('Gagal!', data && data.message ? data.message : 'Terjadi kesalahan.', 'error');
                 }
             })
             .catch(error => {
-                Swal.fire('Error!', 'Tidak dapat terhubung ke server.', 'error');
+                Swal.fire('Error!', error.message || 'Tidak dapat terhubung ke server.', 'error');
             })
             .finally(() => {
                 submitButton.disabled = false;

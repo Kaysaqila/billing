@@ -71,6 +71,7 @@ ob_start();
             <th>Bulan</th>
             <th>Tagihan</th>
             <th>Status</th>
+            <th>Durasi</th>
             <th>Aksi</th>
         </tr>
     </thead>
@@ -127,7 +128,7 @@ ob_start();
                 $kode_pelanggan = $row['kode_pelanggan'] ?? ($row['kode'] ?? '');
 
                 if (isset($_SESSION['wilayah']) && $_SESSION['wilayah'] === 'samiran') {
-                    // Format pesan khusus Samiran 
+                    // Pesan Samiran 
                     $pesan_tagihan = "Pelanggan Yth.\n".
                     "Bapak/Ibu/Sdr : $nama\n".
                     "-------------------------------------------\n".
@@ -151,8 +152,12 @@ ob_start();
                     "2) Shopeepay (085741571679) Laga Andika\n".
                     "--------------------------------------------\n".
                     "Abaikan informasi ini jika anda telah melakukan pembayaran, Terima Kasih";
+                } elseif (isset($_SESSION['wilayah']) && $_SESSION['wilayah'] === 'godean') {
+                    // Pesan godean
+                    $alamat = $row['alamat'] ?? '';
+                    $pesan_tagihan = "Kepada Pelanggan Wifi Bapak/Ibu: $nama, alamat: $alamat, Paket: $paket, Total Tagihan: Rp$tagihan, Pembayaran mulai tanggal 1-6 tiap bulannya, Konfirmasikan pembayaran ke nomor wa.me/6281578629760, abaikan jika sudah melakukan pembayaran, terima kasih";
                 } else {
-                    // Pesan default untuk wilayah lain (asli)
+                    // Pesan jogja
                     $awal_bulan   = date("1 F Y", strtotime($row['waktu']));
                     $akhir_bulan  = date("t F Y", strtotime($row['waktu']));
 

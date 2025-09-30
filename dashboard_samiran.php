@@ -241,7 +241,7 @@ if (!isset($_SESSION['wilayah']) || $_SESSION['wilayah'] !== 'samiran') {
         .btn-edit { background: var(--primary); }
 
         /* Pagination & Modal Styles (Unchanged) */
-        .pagination { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 30px; }
+    .pagination { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 30px; margin-bottom: 40px; }
         .pagination button { padding: 10px 16px; background-color: white; color: var(--dark); border: 1px solid var(--light-gray); border-radius: 6px; cursor: pointer; transition: all 0.2s ease; }
         .pagination button:hover:not(:disabled) { background-color: var(--primary); color: white; border-color: var(--primary); }
         .pagination button:disabled { opacity: 0.6; cursor: not-allowed; }
@@ -652,11 +652,11 @@ if (!isset($_SESSION['wilayah']) || $_SESSION['wilayah'] !== 'samiran') {
             });
         }
 
-        // Fungsi renderPagination DIMODIFIKASI agar onclick memanggil loadData dengan filter
         function renderPagination(totalPages, currentPage) {
             const paginationDiv = document.getElementById('pagination');
             paginationDiv.innerHTML = '';
             if (totalPages <= 1) return;
+
             const createButton = (text, page, isDisabled = false, isActive = false) => {
                 const btn = document.createElement('button');
                 btn.innerHTML = text;
@@ -665,8 +665,29 @@ if (!isset($_SESSION['wilayah']) || $_SESSION['wilayah'] !== 'samiran') {
                 btn.onclick = () => { loadData(page, currentSearch, currentFilter); };
                 return btn;
             };
+
+            // tombol prev
             paginationDiv.appendChild(createButton('<i class="fas fa-chevron-left"></i>', currentPage - 1, currentPage === 1));
-            for (let i = 1; i <= totalPages; i++) { paginationDiv.appendChild(createButton(i, i, false, i === currentPage)); }
+
+            let maxVisible = 5; // jumlah angka yang ditampilkan di sekitar currentPage
+            let start = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+            let end = Math.min(totalPages, start + maxVisible - 1);
+
+            if (start > 1) {
+                paginationDiv.appendChild(createButton(1, 1));
+                if (start > 2) paginationDiv.appendChild(createButton('...', null, true));
+            }
+
+            for (let i = start; i <= end; i++) {
+                paginationDiv.appendChild(createButton(i, i, false, i === currentPage));
+            }
+
+            if (end < totalPages) {
+                if (end < totalPages - 1) paginationDiv.appendChild(createButton('...', null, true));
+                paginationDiv.appendChild(createButton(totalPages, totalPages));
+            }
+
+            // tombol next
             paginationDiv.appendChild(createButton('<i class="fas fa-chevron-right"></i>', currentPage + 1, currentPage === totalPages));
         }
 
@@ -777,19 +798,28 @@ if (!isset($_SESSION['wilayah']) || $_SESSION['wilayah'] !== 'samiran') {
                 method: 'POST',
                 body: formData
             })
-            .then(response => response.json())
+            .then(async response => {
+                const text = await response.text();
+                let data = null;
+                try { data = JSON.parse(text); } catch(e) { data = null; }
+                if (!response.ok) {
+                    const msg = data && data.message ? data.message : (text || 'Terjadi kesalahan server');
+                    throw new Error(msg);
+                }
+                return data;
+            })
             .then(data => {
-                if (data.success) {
-                    Swal.fire('Berhasil!', 'Data pelanggan baru telah ditambahkan.', 'success');
+                if (data && data.success) {
+                    Swal.fire('Berhasil!', data.message || 'Data pelanggan baru telah ditambahkan.', 'success');
                     closeAddModal();
                     loadData(1, '', currentFilter); // Muat ulang data ke halaman pertama
                     loadStats(); // Muat ulang statistik
                 } else {
-                    Swal.fire('Gagal!', data.message || 'Terjadi kesalahan.', 'error');
+                    Swal.fire('Gagal!', data && data.message ? data.message : 'Terjadi kesalahan.', 'error');
                 }
             })
             .catch(error => {
-                Swal.fire('Error!', 'Tidak dapat terhubung ke server.', 'error');
+                Swal.fire('Error!', error.message || 'Tidak dapat terhubung ke server.', 'error');
             })
             .finally(() => {
                 submitButton.disabled = false;

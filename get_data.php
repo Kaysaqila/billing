@@ -94,7 +94,36 @@ ob_start();
                 <td class="muted"><?= htmlspecialchars($row['alamat'] ?? ''); ?></td>
             <?php endif; ?>
             <td><?= htmlspecialchars($row['paket']); ?></td>
-            <td class="muted"><?= (!empty($row['langganan_aktif_hingga']) ? htmlspecialchars(date("j F Y", strtotime($row['langganan_aktif_hingga']))) : '-'); ?></td>
+            <td class="muted">
+                <?php
+                // Jika ada kolom durasi_langganan (di DB), tampilkan langsung
+                if (isset($row['durasi_langganan']) && $row['durasi_langganan'] !== null && $row['durasi_langganan'] !== '') {
+                    echo htmlspecialchars($row['durasi_langganan']);
+                } else {
+                    // Jika ada langganan_selesai, hitung durasi bulan dari waktu hingga langganan_selesai
+                    if (!empty($row['langganan_selesai']) && !empty($row['waktu'])) {
+                        try {
+                            $start = new DateTime($row['waktu']);
+                            $end = new DateTime($row['langganan_selesai']);
+                            if ($end < $start) {
+                                echo '-';
+                            } else {
+                                $y1 = (int)$start->format('Y'); $m1 = (int)$start->format('n');
+                                $y2 = (int)$end->format('Y'); $m2 = (int)$end->format('n');
+                                $bulan = ($y2 - $y1) * 12 + ($m2 - $m1);
+                                if ($bulan < 0) $bulan = 0;
+                                echo $bulan . ' bulan';
+                            }
+                        } catch (Exception $e) {
+                            echo '-';
+                        }
+                    } else {
+                        // fallback ke kolom lama langganan_aktif_hingga jika tersedia
+                        echo (!empty($row['langganan_aktif_hingga']) ? htmlspecialchars(date("j F Y", strtotime($row['langganan_aktif_hingga']))) : '-');
+                    }
+                }
+                ?>
+            </td>
             <td><?= date("F Y", strtotime($row['waktu'])); ?></td>
             <td><strong>Rp<?= number_format($row['tagihan'],0,',','.'); ?></strong></td>
             <td>

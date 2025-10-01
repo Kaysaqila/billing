@@ -54,6 +54,9 @@ $colsQuery->close();
 
 $has_nomor = in_array('nomor_pelanggan', $availableCols);
 $has_alamat = in_array('alamat', $availableCols);
+// dukungan kolom langganan_selesai dan durasi_langganan
+$has_selesai = in_array('langganan_selesai', $availableCols);
+$has_durasi = in_array('durasi_langganan', $availableCols);
 
 // Build INSERT statement dynamically depending on available columns
 $columns = ['nama', 'paket', 'waktu', 'tagihan'];
@@ -81,6 +84,42 @@ if ($has_alamat && isset($_POST['alamat'])) {
     $placeholders[] = '?';
     $types .= 's';
     $values[] = $alamat;
+}
+
+// jika menerima langganan_selesai dan kolom ada, tambahkan ke insert
+if ($has_selesai && isset($_POST['langganan_selesai'])) {
+    $langganan_selesai = trim($_POST['langganan_selesai']);
+    if ($langganan_selesai === '') {
+        // kosong -> simpan NULL dengan melewatkan kolom (tidak menambah)
+    } else {
+        $columns[] = 'langganan_selesai';
+        $placeholders[] = '?';
+        $types .= 's';
+        $values[] = $langganan_selesai;
+
+        // hitung durasi jika kolom durasi ada
+        if ($has_durasi) {
+            try {
+                $start = new DateTime($waktu);
+                $end = new DateTime($langganan_selesai);
+                if ($end < $start) {
+                    $bulan = 0;
+                } else {
+                    $y1 = (int)$start->format('Y'); $m1 = (int)$start->format('n');
+                    $y2 = (int)$end->format('Y'); $m2 = (int)$end->format('n');
+                    $bulan = ($y2 - $y1) * 12 + ($m2 - $m1);
+                    if ($bulan < 0) $bulan = 0;
+                }
+            } catch (Exception $e) {
+                $bulan = 0;
+            }
+            $durasi_text = $bulan . ' bulan';
+            $columns[] = 'durasi_langganan';
+            $placeholders[] = '?';
+            $types .= 's';
+            $values[] = $durasi_text;
+        }
+    }
 }
 
 $colList = implode(', ', $columns);

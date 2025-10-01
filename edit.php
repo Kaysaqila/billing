@@ -55,14 +55,25 @@ $col_check_sql_masa = "SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHE
 $col_check_res_masa = $koneksi->query($col_check_sql_masa);
 $has_langganan_aktif_hingga = ($col_check_res_masa && $col_check_res_masa->num_rows > 0);
 
+// Cek apakah tabel punya kolom 'langganan_selesai' dan 'durasi_langganan'
+$col_check_sql_selesai = "SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '$escaped_table' AND COLUMN_NAME = 'langganan_selesai' LIMIT 1";
+$col_check_res_selesai = $koneksi->query($col_check_sql_selesai);
+$has_langganan_selesai = ($col_check_res_selesai && $col_check_res_selesai->num_rows > 0);
+
+$col_check_sql_durasi = "SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '$escaped_table' AND COLUMN_NAME = 'durasi_langganan' LIMIT 1";
+$col_check_res_durasi = $koneksi->query($col_check_sql_durasi);
+$has_durasi_langganan = ($col_check_res_durasi && $col_check_res_durasi->num_rows > 0);
+
 // kalau tombol update ditekan
 if (isset($_POST['update'])) {
     $tagihan = $_POST['tagihan'];
     $status = $_POST['status_bayar'];
-    // terima value masa aktif jika tersedia
-    $langganan_aktif_hingga = isset($_POST['langganan_aktif_hingga']) ? $koneksi->real_escape_string($_POST['langganan_aktif_hingga']) : null;
+    // terima value masa aktif jika tersedia (hanya jika field dikirimkan)
+    $langganan_aktif_hingga = array_key_exists('langganan_aktif_hingga', $_POST) ? $koneksi->real_escape_string($_POST['langganan_aktif_hingga']) : null;
     $nomor_pelanggan = isset($_POST['nomor_pelanggan']) ? $koneksi->real_escape_string($_POST['nomor_pelanggan']) : '';
     $alamat = isset($_POST['alamat']) ? $koneksi->real_escape_string($_POST['alamat']) : '';
+    // terima langganan_selesai jika kolom tersedia
+    $langganan_selesai = isset($_POST['langganan_selesai']) ? trim($_POST['langganan_selesai']) : null;
     
     // Debug: tampilkan nilai yang diterima
     error_log("Edit Debug - ID: $id, Table: $table_name, Tagihan: $tagihan, Status: $status, Nomor: $nomor_pelanggan");
@@ -107,6 +118,42 @@ if (isset($_POST['update'])) {
             } else {
                 $escaped_masa = $koneksi->real_escape_string($langganan_aktif_hingga);
                 $assignments[] = "langganan_aktif_hingga='" . $escaped_masa . "'";
+            }
+        }
+    }
+    // Jika ada kolom langganan_selesai / durasi_langganan, hitung durasi dalam bulan dari kolom 'waktu' sampai 'langganan_selesai'
+    if ($has_langganan_selesai) {
+        if ($langganan_selesai === null || $langganan_selesai === '') {
+            $assignments[] = "langganan_selesai=NULL";
+            if ($has_durasi_langganan) $assignments[] = "durasi_langganan=NULL";
+        } else {
+            // validasi format YYYY-MM-DD
+            $raw_selesai = $koneksi->real_escape_string($langganan_selesai);
+            $assignments[] = "langganan_selesai='" . $raw_selesai . "'";
+
+            if ($has_durasi_langganan) {
+                // hitung selisih bulan antara waktu (kolom 'waktu' di DB) dan langganan_selesai
+                try {
+                    $start = new DateTime($data['waktu']);
+                    $end = new DateTime($langganan_selesai);
+                    // Jika end < start, set durasi 0
+                    if ($end < $start) {
+                        $bulan = 0;
+                    } else {
+                        $y1 = (int)$start->format('Y'); $m1 = (int)$start->format('n');
+                        $y2 = (int)$end->format('Y'); $m2 = (int)$end->format('n');
+                        $bulan = ($y2 - $y1) * 12 + ($m2 - $m1);
+                        // jika tanggal di end lebih kecil dari tanggal di start, jangan tambahkan sisa; kita hitung per bulan penuh
+                        if ((int)$end->format('j') < (int)$start->format('j')) {
+                            // tidak menambah
+                        }
+                        if ($bulan < 0) $bulan = 0;
+                    }
+                } catch (Exception $e) {
+                    $bulan = 0;
+                }
+                $durasi_text = $bulan . ' bulan';
+                $assignments[] = "durasi_langganan='" . $koneksi->real_escape_string($durasi_text) . "'";
             }
         }
     }
@@ -285,90 +332,15 @@ if (isset($_POST['update'])) {
                     </div>
 
                     <div class="grid" style="margin-top:12px">
-                        <?php if ($has_langganan_aktif_hingga):
-                            // Jika kolom ada, coba ambil nilai dan ubah ke format YYYY-MM untuk input[type=month]
-                            $masa_value = '';
-                            if (!empty($data['langganan_aktif_hingga'])) {
-                                // dukung format YYYY-MM-DD atau YYYY-MM
-                                if (preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $data['langganan_aktif_hingga'], $m)) {
-                                    $masa_value = $m[1] . '-' . $m[2];
-                                } elseif (preg_match('/^(\d{4})-(\d{2})$/', $data['langganan_aktif_hingga'], $m2)) {
-                                    $masa_value = $m2[1] . '-' . $m2[2];
-                                }
-                            }
+                        <!-- Masa Aktif input removed per request; using langganan_selesai instead -->
+
+                        <?php if ($has_langganan_selesai):
+                            $selesai_value = !empty($data['langganan_selesai']) ? $data['langganan_selesai'] : '';
                         ?>
                         <div class="col">
-                            <label class="small">Masa Aktif Langganan</label>
-                            <?php
-                                // Siapkan nilai tahun/bulan untuk fallback select
-                                $masa_year = '';
-                                $masa_month = '';
-                                if (!empty($masa_value) && preg_match('/^(\d{4})-(\d{2})$/', $masa_value, $mm)) {
-                                    $masa_year = $mm[1];
-                                    $masa_month = $mm[2];
-                                } else {
-                                    $masa_year = date('Y');
-                                    $masa_month = date('m');
-                                }
-                                
-                                $months = [
-                                    "01"=>"Januari", "02"=>"Februari", "03"=>"Maret", "04"=>"April",
-                                    "05"=>"Mei", "06"=>"Juni", "07"=>"Juli", "08"=>"Agustus",
-                                    "09"=>"September", "10"=>"Oktober", "11"=>"November", "12"=>"Desember"
-                                ];
-                                
-                                $current_year = date('Y');
-                                $years = [];
-                                for ($y = $current_year - 2; $y <= $current_year + 3; $y++) {
-                                    $years[] = $y;
-                                }
-                            ?>
-                            
-                            <!-- Modern month input (HTML5) -->
-                            <input type="month" id="masa-month" value="<?= htmlspecialchars($masa_value) ?>" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #e6eef6;background:#fff;box-sizing:border-box">
-
-                            <!-- Fallback selects (hidden by default, shown when input[type=month] not supported) -->
-                            <div id="masa-fallback" style="display:none;margin-top:12px">
-                                <div class="grid">
-                                    <!-- Bulan -->
-                                    <div class="col">
-                                        <label class="small">Bulan</label>
-                                        <select class="month-select" name="langganan_bulan" id="masa-month-select">
-                                            <option value="">Pilih Bulan</option>
-                                            <?php foreach ($months as $num => $label): ?>
-                                                <option value="<?= $num ?>" <?= $masa_month === $num ? 'selected' : '' ?> >
-                                                    <?= $label ?>
-                                                </option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                    </div>
-
-                                    <!-- Tahun -->
-                                    <div class="col">
-                                        <label class="small">Tahun</label>
-                                        <select class="year-select" name="langganan_tahun" id="masa-year-select">
-                                            <option value="">Pilih Tahun</option>
-                                            <?php foreach ($years as $year): ?>
-                                                <option value="<?= $year ?>" <?= $masa_year == $year ? 'selected' : '' ?>>
-                                                    <?= $year ?>
-                                                </option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Hidden input untuk menyimpan nilai format YYYY-MM (dikirim ke server) -->
-                            <input type="hidden" name="langganan_aktif_hingga" id="masa-hidden" value="<?= htmlspecialchars($masa_value) ?>">
-                            </div>
-                            
-                        </div>
-                        <?php else: ?>
-                        <div class="col">
-                            <label class="small">Masa Aktif Langganan</label>
-                            <div class="field" aria-readonly="true">
-                                <?= !empty($data['langganan_aktif_hingga']) ? htmlspecialchars($data['langganan_aktif_hingga']) : '-' ?>
-                            </div>
+                            <label class="small">Langganan Selesai</label>
+                            <input type="date" name="langganan_selesai" value="<?= htmlspecialchars($selesai_value); ?>" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #e6eef6;background:#fff;box-sizing:border-box">
+                            <div class="note" style="margin-top:6px">Biarkan kosong untuk mengosongkan masa aktif.</div>
                         </div>
                         <?php endif; ?>
                     </div>

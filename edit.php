@@ -95,14 +95,19 @@ if (isset($_POST['update'])) {
     if ($has_alamat) {
         $assignments[] = "alamat='$alamat'";
     }
-    if ($has_langganan_aktif_hingga && $langganan_aktif_hingga !== null) {
-        // simpan format YYYY-MM ke tipe DATE or VARCHAR sesuai skema; kita simpan sebagai akhir bulan (YYYY-MM-01) jika kolom DATE
-        // Coba deteksi apakah value dalam format YYYY-MM
-        if (preg_match('/^\d{4}-\d{2}$/', $langganan_aktif_hingga)) {
-            // simpan sebagai YYYY-MM-01 agar kompatibel dengan DATE/TIMESTAMP
-            $assignments[] = "langganan_aktif_hingga='" . $langganan_aktif_hingga . "-01'";
+    if ($has_langganan_aktif_hingga) {
+        // Jika field tidak dikirimkan atau dikosongkan, simpan NULL ke kolom DATE
+        if ($langganan_aktif_hingga === null || $langganan_aktif_hingga === '') {
+            $assignments[] = "langganan_aktif_hingga=NULL";
         } else {
-            $assignments[] = "langganan_aktif_hingga='" . $langganan_aktif_hingga . "'";
+            // simpan format YYYY-MM ke tipe DATE or VARCHAR sesuai skema; kita simpan sebagai awal bulan (YYYY-MM-01) jika kolom DATE
+            if (preg_match('/^\d{4}-\d{2}$/', $langganan_aktif_hingga)) {
+                $escaped_masa = $koneksi->real_escape_string($langganan_aktif_hingga);
+                $assignments[] = "langganan_aktif_hingga='" . $escaped_masa . "-01'";
+            } else {
+                $escaped_masa = $koneksi->real_escape_string($langganan_aktif_hingga);
+                $assignments[] = "langganan_aktif_hingga='" . $escaped_masa . "'";
+            }
         }
     }
 

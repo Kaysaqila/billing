@@ -235,9 +235,14 @@ ob_start();
                 $pesan_resi_encode = urlencode($pesan_resi);
                 ?>
                 <div class="action-row">
-                    <a href="https://wa.me/<?= $tujuan ?>?text=<?= $pesan_tagihan_encode ?>" target="_blank"><button class="action-btn btn-tagihan">Kirim Tagihan</button></a>
-                    <button class="action-btn btn-resi" onclick="sendReceipt(<?= $row['id']; ?>, '<?= $tujuan; ?>', '<?= $pesan_resi_encode; ?>')">Kirim Resi</button>
-                    <button class="action-btn btn-edit" onclick="openEditModal(<?= $row['id']; ?>)">Edit</button>
+                    <a href="https://wa.me/<?= $tujuan ?>?text=<?= $pesan_tagihan_encode ?>" target="_blank"><button class="action-btn btn-tagihan" aria-label="Kirim Tagihan">Kirim Tagihan</button></a>
+                    <?php if (!(isset($_SESSION['wilayah']) && $_SESSION['wilayah'] === 'samiran')): ?>
+                        <button class="action-btn btn-resi" onclick="sendReceipt(<?= $row['id']; ?>, '<?= $tujuan; ?>', '<?= $pesan_resi_encode; ?>')" aria-label="Kirim Resi">Kirim Resi</button>
+                    <?php endif; ?>
+                    <!-- Icon-only Edit button -->
+                    <button class="action-btn btn-edit icon-only" onclick="openEditModal(<?= $row['id']; ?>)" title="Edit" aria-label="Edit"><i class="fas fa-edit" aria-hidden="true"></i></button>
+                    <!-- Icon-only Delete button -->
+                    <button class="action-btn btn-delete icon-only" onclick="confirmDelete(<?= $row['id']; ?>, this)" title="Hapus" aria-label="Hapus"><i class="fas fa-trash-alt" aria-hidden="true"></i></button>
                 </div>
             </td>
         </tr>

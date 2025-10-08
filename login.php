@@ -3,8 +3,8 @@ session_start();
 include 'db.php';
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $username = $_POST['username'];
-    $password = $_POST['password'];
+    $username = trim($_POST['username'] ?? '');
+    $password = $_POST['password'] ?? '';
 
     $sql = "SELECT * FROM users WHERE username=?";
     $stmt = $koneksi->prepare($sql);
@@ -33,10 +33,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
             exit;
         } else {
-            $error = "Password salah!";
+            $error_message = "Password salah!";
         }
     } else {
-        $error = "Username tidak ditemukan!";
+        $error_message = "Username tidak ditemukan!";
     }
 }
 ?>
@@ -90,13 +90,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <?php
             // optionally show server-side error message if set by existing logic
             if (!empty($error_message ?? '')): ?>
-                <div class="server-error"><?= htmlspecialchars($error_message); ?></div>
+                <div class="server-error" role="alert" style="color: #b91c1c; margin:12px 0; font-weight:600;"><?= htmlspecialchars($error_message); ?></div>
             <?php endif; ?>
 
             <form class="comfort-form" id="loginForm" method="post" novalidate>
                 <div class="soft-field">
                     <div class="field-container">
-                        <input type="text" id="username" name="username" required autocomplete="username">
+                        <input type="text" id="username" name="username" required autocomplete="username" value="<?= htmlspecialchars($username ?? ''); ?>">
                         <label for="username">Username</label>
                         <div class="field-accent"></div>
                     </div>

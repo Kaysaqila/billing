@@ -230,7 +230,7 @@ if (isset($_SESSION['wilayah']) && $_SESSION['wilayah'] !== 'jogja') {
     .modern-table th:nth-child(6) { width: 10%; }  /* Bulan */
     .modern-table th:nth-child(7) { width: 10%; }   /* Tagihan */
     .modern-table th:nth-child(8) { width: 10%; }   /* Status */
-    .modern-table th:nth-child(9) { width: 25%; min-width: 240px;} /* Aksi, dengan lebar minimum */
+    .modern-table th:nth-child(9) { width: 25%; min-width: 380px; text-align: center; } /* Aksi, lebar minimum diperbesar */
         .modern-table td { padding: 14px 18px; border-bottom: 1px solid var(--light-gray); vertical-align: middle; color: #333; word-wrap: break-word; }
         .id-pill { display: inline-block; padding: 6px 10px; background: var(--light-gray); border-radius: 15px; color: var(--secondary); font-weight: 600; font-size: 13px; }
         .name-cell { font-weight: 600; color: var(--dark); }
@@ -240,10 +240,11 @@ if (isset($_SESSION['wilayah']) && $_SESSION['wilayah'] !== 'jogja') {
         .badge-success { background: var(--success); }
         .badge-danger { background: var(--danger); }
     .action-btn { padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: all 140ms ease; color: #fff; text-decoration: none; margin: 6px 4px; }
-        .action-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
-        .btn-tagihan { background: var(--success); }
-        .btn-resi { background: var(--warning); }
-        .btn-edit { background: var(--primary); }
+    .action-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
+    .btn-tagihan { background: var(--success); }
+    .btn-resi { background: var(--warning); }
+    .btn-edit { background: var(--primary); }
+    .action-btn.btn-delete { background: var(--danger); color: #fff; }
 
         /* Pagination & Modal Styles (Unchanged) */
     .pagination { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 30px; margin-bottom: 40px; }
@@ -274,10 +275,12 @@ if (isset($_SESSION['wilayah']) && $_SESSION['wilayah'] !== 'jogja') {
             flex-direction: row;
             justify-content: flex-start;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             white-space: nowrap;
+            flex-wrap: nowrap;
+            overflow: visible;
         }
-        .modern-table td.actions-cell .action-row { display: inline-flex; gap: 8px; }
+        .modern-table td.actions-cell .action-row { display: inline-flex; gap: 6px; flex-wrap: nowrap; }
 
         .btn-create {
             background: var(--primary); /* Warna biru agar serasi dengan tombol Edit */
@@ -761,6 +764,35 @@ if (isset($_SESSION['wilayah']) && $_SESSION['wilayah'] !== 'jogja') {
                 if (result.isConfirmed) {
                     // Jika pengguna menekan "Ya", arahkan ke halaman logout
                     window.location.href = 'logout.php';
+                }
+            });
+        }
+
+        function confirmDelete(id) {
+            Swal.fire({
+                title: 'Hapus data?',
+                text: 'Data yang dihapus tidak dapat dikembalikan. Yakin ingin melanjutkan?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Ya, Hapus',
+                cancelButtonText: 'Batal',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    fetch(`delete.php?id=${id}`)
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.success) {
+                                Swal.fire('Terhapus', data.message, 'success');
+                                // refresh table and stats using current pagination/search/filter
+                                if (typeof loadData === 'function') loadData(currentPage, currentSearch, currentFilter);
+                                if (typeof loadStats === 'function') loadStats();
+                            } else {
+                                Swal.fire('Gagal', data.message || 'Delete gagal', 'error');
+                            }
+                        }).catch(err => {
+                            Swal.fire('Error', 'Terjadi kesalahan jaringan', 'error');
+                        });
                 }
             });
         }

@@ -576,7 +576,7 @@ if (!isset($_SESSION['wilayah']) || $_SESSION['wilayah'] !== 'godean') {
                             <div class="grid" style="margin-top:12px">
                                 <div class="col">
                                     <label class="small">Paket</label>
-                                    <input type="text" name="paket" required>
+                                    <input type="text" name="paket" required value="<?= (isset($_SESSION['wilayah']) && $_SESSION['wilayah'] === 'samiran') ? 'Reguler CLEON' : ''; ?>">
                                 </div>
                                 <div class="col">
                                     <label class="small">Nomor WhatsApp</label>

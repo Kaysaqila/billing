@@ -30,6 +30,11 @@ if (isset($_SESSION['wilayah'])) {
 $id_pelanggan = isset($_POST['id_pelanggan']) ? trim($_POST['id_pelanggan']) : null;
 $nama = isset($_POST['nama']) ? trim($_POST['nama']) : '';
 $paket = isset($_POST['paket']) ? trim($_POST['paket']) : '';
+$formWilayah = $_SESSION['wilayah'] ?? '';
+// Jika wilayah Samiran dan paket kosong, berikan default 'Reguler CLEON'
+if ($formWilayah === 'samiran' && $paket === '') {
+    $paket = 'Reguler CLEON';
+}
 $nomor_pelanggan = isset($_POST['nomor_pelanggan']) ? trim($_POST['nomor_pelanggan']) : null;
 $tagihan = isset($_POST['tagihan']) ? (float)$_POST['tagihan'] : 0;
 $waktu = date('Y-m-d H:i:s'); // Waktu saat ini

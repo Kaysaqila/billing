@@ -2,13 +2,15 @@
 session_start();
 include 'db.php';
 
+// form username variable (avoid collision with db.php $username)
+$form_username = '';
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $username = trim($_POST['username'] ?? '');
+    $form_username = trim($_POST['username'] ?? '');
     $password = $_POST['password'] ?? '';
 
     $sql = "SELECT * FROM users WHERE username=?";
     $stmt = $koneksi->prepare($sql);
-    $stmt->bind_param("s", $username);
+    $stmt->bind_param("s", $form_username);
     $stmt->execute();
     $result = $stmt->get_result();
 
@@ -96,7 +98,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <form class="comfort-form" id="loginForm" method="post" novalidate>
                 <div class="soft-field">
                     <div class="field-container">
-                        <input type="text" id="username" name="username" required autocomplete="username" value="<?= htmlspecialchars($username ?? ''); ?>">
+                        <input type="text" id="username" name="username" required autocomplete="username" value="<?= htmlspecialchars($form_username ?? ''); ?>">
                         <label for="username">Username</label>
                         <div class="field-accent"></div>
                     </div>

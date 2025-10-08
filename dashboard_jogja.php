@@ -230,7 +230,7 @@ if (isset($_SESSION['wilayah']) && $_SESSION['wilayah'] !== 'jogja') {
     .modern-table th:nth-child(6) { width: 10%; }  /* Bulan */
     .modern-table th:nth-child(7) { width: 10%; }   /* Tagihan */
     .modern-table th:nth-child(8) { width: 10%; }   /* Status */
-    .modern-table th:nth-child(9) { width: 25%; min-width: 380px; text-align: center; } /* Aksi, lebar minimum diperbesar */
+    .modern-table th:nth-child(9) { width: 30%; min-width: 380px; text-align: center; } /* Aksi, lebar minimum diperbesar */
         .modern-table td { padding: 14px 18px; border-bottom: 1px solid var(--light-gray); vertical-align: middle; color: #333; word-wrap: break-word; }
         .id-pill { display: inline-block; padding: 6px 10px; background: var(--light-gray); border-radius: 15px; color: var(--secondary); font-weight: 600; font-size: 13px; }
         .name-cell { font-weight: 600; color: var(--dark); }

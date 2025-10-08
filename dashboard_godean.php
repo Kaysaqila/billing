@@ -222,9 +222,9 @@ if (!isset($_SESSION['wilayah']) || $_SESSION['wilayah'] !== 'godean') {
     .modern-table th:nth-child(3) { width: 10%; }  /* Nama Pelanggan */
     .modern-table th:nth-child(4) { width: 10%; }  /* Alamat (Godean) */
     .modern-table th:nth-child(5) { width: 10%; }  /* Paket */
-    .modern-table th:nth-child(6) { width: 12%; }  /* Masa Aktif */
+    .modern-table th:nth-child(6) { width: 11%; }  /* Masa Aktif */
     .modern-table th:nth-child(7) { width: 10%; }  /* Bulan */
-    .modern-table th:nth-child(8) { width: 10%; }  /* Tagihan */
+    .modern-table th:nth-child(8) { width: 11%; }  /* Tagihan */
     .modern-table th:nth-child(9) { width: 10%; }   /* Status */
     .modern-table th:nth-child(10) { width: 30%; min-width: 380px; text-align: center; } /* Aksi / Durasi + Aksi area, lebar minimum diperbesar */
         .modern-table td { padding: 14px 18px; border-bottom: 1px solid var(--light-gray); vertical-align: middle; color: #333; word-wrap: break-word; }

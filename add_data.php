@@ -26,7 +26,7 @@ if (isset($_SESSION['wilayah'])) {
     }
 }
 
-// Ambil data dari POST dengan pemeriksaan isset
+// Ambil data dari POST dengan pemeriksaan isset ya
 $id_pelanggan = isset($_POST['id_pelanggan']) ? trim($_POST['id_pelanggan']) : null;
 $nama = isset($_POST['nama']) ? trim($_POST['nama']) : '';
 $paket = isset($_POST['paket']) ? trim($_POST['paket']) : '';

@@ -633,6 +633,8 @@ if (isset($_SESSION['wilayah']) && $_SESSION['wilayah'] !== 'jogja') {
 
         // Fungsi loadData DIMODIFIKASI untuk menyertakan parameter filter
         function loadData(page, search = "", filter = "all") {
+            // remember current page so other actions (like closing edit modal) can reload the same page
+            currentPage = page;
             currentSearch = search;
             currentFilter = filter;
             document.getElementById('table-container').innerHTML = `<div style="padding: 40px; text-align: center; color: var(--gray);"><i class="fas fa-spinner fa-spin fa-2x"></i></div>`;

@@ -320,7 +320,8 @@ if (isset($_POST['update'])) {
                     <div class="grid" style="margin-top:12px">
                         <div class="col">
                             <label class="small">Tagihan</label>
-                            <input type="number" name="tagihan" value="<?= htmlspecialchars($data['tagihan']); ?>" required step="0.01" min="0">
+                            <!-- Allow negative values (e.g., -30000) -->
+                            <input type="number" name="tagihan" value="<?= htmlspecialchars($data['tagihan']); ?>" required step="0.01">
                         </div>
                         <div class="col">
                             <label class="small">Status Bayar</label>
@@ -377,19 +378,14 @@ if (isset($_POST['update'])) {
             var tagihanInput = document.querySelector('input[name="tagihan"]');
             var statusSelect = document.querySelector('select[name="status_bayar"]');
             if (tagihanInput && statusSelect) {
-                tagihanInput.addEventListener('input', function() {
-                    const tagihan = parseFloat(this.value) || 0;
-                    if (tagihan > 0 && statusSelect.value === 'Lunas') {
-                        statusSelect.value = 'Belum Lunas';
-                    }
-                });
-
+                // Keep automatic status adjustment: if admin chooses Lunas, set tagihan to 0.
                 statusSelect.addEventListener('change', function() {
                     if (this.value === 'Lunas') {
                         tagihanInput.value = '0';
                     }
                 });
-            }
+                // Do not coerce negative inputs to 0 here; allow negative numbers for credits/refunds.
++            }
 
             // Month input support detection and fallback
             try {

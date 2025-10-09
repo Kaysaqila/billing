@@ -72,8 +72,8 @@ ob_start();
                 <th>Alamat</th>
             <?php endif; ?>
             <th>Paket</th>
-            <th>Masa Aktif</th>
-            <th>Bulan</th>
+            <th>Masa Aktif Sampai</th>
+            <th>Tagihan Bulan</th>
             <th>Tagihan</th>
             <th>Status</th>
             <th>Aksi</th>
@@ -96,31 +96,25 @@ ob_start();
             <td><?= htmlspecialchars($row['paket']); ?></td>
             <td class="muted">
                 <?php
-                // Jika ada kolom durasi_langganan (di DB), tampilkan langsung
-                if (isset($row['durasi_langganan']) && $row['durasi_langganan'] !== null && $row['durasi_langganan'] !== '') {
+                // Prefer showing the full langganan_selesai date (e.g. "1 Januari 2026") when available.
+                if (!empty($row['langganan_selesai'])) {
+                    // Format tanggal ke Bahasa Indonesia
+                    $ts = strtotime($row['langganan_selesai']);
+                    if ($ts !== false) {
+                        $months_id = [1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April', 5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus', 9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'];
+                        $d = (int)date('j', $ts);
+                        $m = (int)date('n', $ts);
+                        $y = date('Y', $ts);
+                        echo $d . ' ' . ($months_id[$m] ?? date('F', $ts)) . ' ' . $y;
+                    } else {
+                        echo '-';
+                    }
+                } elseif (isset($row['durasi_langganan']) && $row['durasi_langganan'] !== null && $row['durasi_langganan'] !== '') {
+                    // fallback: if durasi text exists, show it
                     echo htmlspecialchars($row['durasi_langganan']);
                 } else {
-                    // Jika ada langganan_selesai, hitung durasi bulan dari waktu hingga langganan_selesai
-                    if (!empty($row['langganan_selesai']) && !empty($row['waktu'])) {
-                        try {
-                            $start = new DateTime($row['waktu']);
-                            $end = new DateTime($row['langganan_selesai']);
-                            if ($end < $start) {
-                                echo '-';
-                            } else {
-                                $y1 = (int)$start->format('Y'); $m1 = (int)$start->format('n');
-                                $y2 = (int)$end->format('Y'); $m2 = (int)$end->format('n');
-                                $bulan = ($y2 - $y1) * 12 + ($m2 - $m1);
-                                if ($bulan < 0) $bulan = 0;
-                                echo $bulan . ' bulan';
-                            }
-                        } catch (Exception $e) {
-                            echo '-';
-                        }
-                    } else {
-                        // fallback ke kolom lama langganan_aktif_hingga jika tersedia
-                        echo (!empty($row['langganan_aktif_hingga']) ? htmlspecialchars(date("j F Y", strtotime($row['langganan_aktif_hingga']))) : '-');
-                    }
+                    // fallback to old langganan_aktif_hingga column if present
+                    echo (!empty($row['langganan_aktif_hingga']) ? htmlspecialchars(date("j F Y", strtotime($row['langganan_aktif_hingga']))) : '-');
                 }
                 ?>
             </td>

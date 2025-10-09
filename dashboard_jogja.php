@@ -222,7 +222,7 @@ if (isset($_SESSION['wilayah']) && $_SESSION['wilayah'] !== 'jogja') {
             /* Ganti border agar serasi dengan background biru */
             border-bottom: 2px solid #2980b9; 
         }
-    .modern-table th:nth-child(1) { width: 5%; }   /* No */
+    .modern-table th:nth-child(1) { width: 7%; }   /* No */
     .modern-table th:nth-child(2) { width: 12%; }  /* ID Pelanggan */
     .modern-table th:nth-child(3) { width: 14%; }  /* Nama Pelanggan */
     .modern-table th:nth-child(4) { width: 12%; }  /* Paket */

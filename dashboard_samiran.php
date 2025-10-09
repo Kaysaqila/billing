@@ -218,7 +218,7 @@ if (!isset($_SESSION['wilayah']) || $_SESSION['wilayah'] !== 'samiran') {
             /* Ganti border agar serasi dengan background biru */
             border-bottom: 2px solid #2980b9; 
         }
-    .modern-table th:nth-child(1) { width: 5%; }   /* No */
+    .modern-table th:nth-child(1) { width: 7%; }   /* No */
     .modern-table th:nth-child(2) { width: 12%; }  /* ID Pelanggan */
     .modern-table th:nth-child(3) { width: 14%; }  /* Nama Pelanggan */
     .modern-table th:nth-child(4) { width: 12%; }  /* Paket */
@@ -572,6 +572,12 @@ if (!isset($_SESSION['wilayah']) || $_SESSION['wilayah'] !== 'samiran') {
                                 <div class="col">
                                     <label class="small">Nomor WhatsApp</label>
                                     <input type="text" name="nomor_pelanggan" placeholder="Contoh: 628123456789">
+                                </div>
+                            </div>
+                            <div class="grid" style="margin-top:12px">
+                                <div class="col">
+                                    <label class="small">Kode Pelanggan</label>
+                                    <input type="text" name="kode_pelanggan" placeholder="Kode pelanggan (untuk Samiran)">
                                 </div>
                             </div>
                             <div class="grid" style="margin-top:12px">

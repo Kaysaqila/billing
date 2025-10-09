@@ -64,6 +64,11 @@ $col_check_sql_durasi = "SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SC
 $col_check_res_durasi = $koneksi->query($col_check_sql_durasi);
 $has_durasi_langganan = ($col_check_res_durasi && $col_check_res_durasi->num_rows > 0);
 
+// Cek apakah tabel punya kolom 'kode_pelanggan' (Samiran)
+$col_check_sql_kode = "SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '$escaped_table' AND COLUMN_NAME = 'kode_pelanggan' LIMIT 1";
+$col_check_res_kode = $koneksi->query($col_check_sql_kode);
+$has_kode_pelanggan = ($col_check_res_kode && $col_check_res_kode->num_rows > 0);
+
 // kalau tombol update ditekan
 if (isset($_POST['update'])) {
     $tagihan = $_POST['tagihan'];
@@ -74,6 +79,7 @@ if (isset($_POST['update'])) {
     $alamat = isset($_POST['alamat']) ? $koneksi->real_escape_string($_POST['alamat']) : '';
     // terima langganan_selesai jika kolom tersedia
     $langganan_selesai = isset($_POST['langganan_selesai']) ? trim($_POST['langganan_selesai']) : null;
+    $kode_pelanggan = isset($_POST['kode_pelanggan']) ? $koneksi->real_escape_string($_POST['kode_pelanggan']) : '';
     
     // Debug: tampilkan nilai yang diterima
     error_log("Edit Debug - ID: $id, Table: $table_name, Tagihan: $tagihan, Status: $status, Nomor: $nomor_pelanggan");
@@ -102,6 +108,9 @@ if (isset($_POST['update'])) {
     $assignments[] = "status_bayar='$status_escaped'";
     if ($has_nomor_pelanggan) {
         $assignments[] = "nomor_pelanggan='$nomor_pelanggan'";
+    }
+    if ($has_kode_pelanggan) {
+        $assignments[] = "kode_pelanggan='$kode_pelanggan'";
     }
     if ($has_alamat) {
         $assignments[] = "alamat='$alamat'";
@@ -298,6 +307,12 @@ if (isset($_POST['update'])) {
                             <label class="small">Nomor Pelanggan</label>
                             <input type="text" name="nomor_pelanggan" value="<?= htmlspecialchars(isset($data['nomor_pelanggan']) ? $data['nomor_pelanggan'] : ''); ?>">
                         </div>
+                        <?php if ($has_kode_pelanggan): ?>
+                        <div class="col">
+                            <label class="small">Kode Pelanggan</label>
+                            <input type="text" name="kode_pelanggan" value="<?= htmlspecialchars(isset($data['kode_pelanggan']) ? $data['kode_pelanggan'] : ''); ?>" placeholder="(kosong jika tidak relevan)">
+                        </div>
+                        <?php endif; ?>
                         <?php if (isset($_SESSION['wilayah']) && $_SESSION['wilayah'] === 'godean' && $has_alamat): ?>
                         <div class="col">
                             <label class="small">Alamat</label>

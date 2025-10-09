@@ -217,7 +217,7 @@ if (!isset($_SESSION['wilayah']) || $_SESSION['wilayah'] !== 'godean') {
             /* Ganti border agar serasi dengan background biru */
             border-bottom: 2px solid #2980b9; 
         }
-    .modern-table th:nth-child(1) { width: 5%; }   /* No */
+    .modern-table th:nth-child(1) { width: 6%; }   /* No */
     .modern-table th:nth-child(2) { width: 10%; }  /* ID Pelanggan */
     .modern-table th:nth-child(3) { width: 10%; }  /* Nama Pelanggan */
     .modern-table th:nth-child(4) { width: 10%; }  /* Alamat (Godean) */

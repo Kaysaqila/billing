@@ -59,6 +59,8 @@ $colsQuery->close();
 
 $has_nomor = in_array('nomor_pelanggan', $availableCols);
 $has_alamat = in_array('alamat', $availableCols);
+// dukungan kolom kode_pelanggan untuk Samiran
+$has_kode = in_array('kode_pelanggan', $availableCols);
 // dukungan kolom langganan_selesai dan durasi_langganan
 $has_selesai = in_array('langganan_selesai', $availableCols);
 $has_durasi = in_array('durasi_langganan', $availableCols);
@@ -81,6 +83,14 @@ if ($has_nomor) {
     $placeholders[] = '?';
     $types .= 's';
     $values[] = $nomor_pelanggan;
+}
+
+if ($has_kode && isset($_POST['kode_pelanggan'])) {
+    $kode_pelanggan = trim($_POST['kode_pelanggan']);
+    $columns[] = 'kode_pelanggan';
+    $placeholders[] = '?';
+    $types .= 's';
+    $values[] = $kode_pelanggan;
 }
 
 if ($has_alamat && isset($_POST['alamat'])) {

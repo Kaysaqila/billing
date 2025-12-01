@@ -71,6 +71,9 @@ $has_kode_pelanggan = ($col_check_res_kode && $col_check_res_kode->num_rows > 0)
 
 // kalau tombol update ditekan
 if (isset($_POST['update'])) {
+    $nama = isset($_POST['nama']) ? $koneksi->real_escape_string($_POST['nama']) : '';
+    $id_pelanggan_new = isset($_POST['id_pelanggan']) ? $koneksi->real_escape_string($_POST['id_pelanggan']) : '';
+    $paket = isset($_POST['paket']) ? $koneksi->real_escape_string($_POST['paket']) : '';
     $tagihan = $_POST['tagihan'];
     $status = $_POST['status_bayar'];
     // terima value masa aktif jika tersedia (hanya jika field dikirimkan)
@@ -96,7 +99,6 @@ if (isset($_POST['update'])) {
             $status = 'Belum Lunas';
         }
     }
-    // --- AKHIR DARI LOGIKA YANG DIPERBARUI ---
 
     // Escape data untuk keamanan
     $tagihan_escaped = $koneksi->real_escape_string($tagihan);
@@ -106,6 +108,9 @@ if (isset($_POST['update'])) {
     $assignments = [];
     $assignments[] = "tagihan='$tagihan_escaped'";
     $assignments[] = "status_bayar='$status_escaped'";
+    $assignments[] = "nama='$nama'";
+    $assignments[] = "id_pelanggan='$id_pelanggan_new'";
+    $assignments[] = "paket='$paket'";
     if ($has_nomor_pelanggan) {
         $assignments[] = "nomor_pelanggan='$nomor_pelanggan'";
     }
@@ -294,11 +299,11 @@ if (isset($_POST['update'])) {
                     <div class="grid">
                         <div class="col">
                             <label class="small">Nama</label>
-                            <div class="field" aria-readonly="true"><?= htmlspecialchars($data['nama']); ?></div>
+                            <input type="text" name="nama" value="<?= htmlspecialchars($data['nama']); ?>">
                         </div>
                         <div class="col">
                             <label class="small">ID Pelanggan</label>
-                            <div class="field" aria-readonly="true"><?= htmlspecialchars($data['id_pelanggan']); ?></div>
+                            <input type="text" name="id_pelanggan" value="<?= htmlspecialchars(isset($data['id_pelanggan']) ? $data['id_pelanggan'] : ''); ?>">
                         </div>
                     </div>
 
@@ -324,7 +329,7 @@ if (isset($_POST['update'])) {
                     <div class="grid" style="margin-top:12px">
                         <div class="col">
                             <label class="small">Paket</label>
-                            <div class="field" aria-readonly="true"><?= htmlspecialchars($data['paket']); ?></div>
+                            <input type="text" name="paket" value="<?= htmlspecialchars(isset($data['paket']) ? $data['paket'] : ''); ?>">
                         </div>
                         <div class="col">
                             <label class="small">Bulan</label>

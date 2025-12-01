@@ -28,9 +28,9 @@ if (isset($_SESSION['wilayah']) && $_SESSION['wilayah'] !== 'jogja') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Billing</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="icon" href="logo.png" type="image/png">
-    <link rel="shortcut icon" href="logo.png" type="image/png">
-    <link rel="apple-touch-icon" sizes="180x180" href="logo.png">
+    <link rel="icon" href="logo_cleon.png" type="image/png">
+    <link rel="shortcut icon" href="logo_cleon.png" type="image/png">
+    <link rel="apple-touch-icon" sizes="180x180" href="logo_cleon.png">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         :root {
@@ -228,7 +228,7 @@ if (isset($_SESSION['wilayah']) && $_SESSION['wilayah'] !== 'jogja') {
     .modern-table th:nth-child(4) { width: 12%; }  /* Paket */
     .modern-table th:nth-child(5) { width: 12%; }  /* Masa Aktif */
     .modern-table th:nth-child(6) { width: 10%; }  /* Bulan */
-    .modern-table th:nth-child(7) { width: 10%; }   /* Tagihan */
+    .modern-table th:nth-child(7) { width: 12%; }   /* Tagihan */
     .modern-table th:nth-child(8) { width: 10%; }   /* Status */
     .modern-table th:nth-child(9) { width: 32%; min-width: 380px; text-align: center; } /* Aksi, lebar minimum diperbesar */
         .modern-table td { padding: 14px 18px; border-bottom: 1px solid var(--light-gray); vertical-align: middle; color: #333; word-wrap: break-word; }

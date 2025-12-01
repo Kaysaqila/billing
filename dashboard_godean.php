@@ -23,9 +23,9 @@ if (!isset($_SESSION['wilayah']) || $_SESSION['wilayah'] !== 'godean') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Billing</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="icon" href="logo.png" type="image/png">
-    <link rel="shortcut icon" href="logo.png" type="image/png">
-    <link rel="apple-touch-icon" sizes="180x180" href="logo.png">
+    <link rel="icon" href="logo_cleon.png" type="image/png">
+    <link rel="shortcut icon" href="logo_cleon.png" type="image/png">
+    <link rel="apple-touch-icon" sizes="180x180" href="logo_cleon.png">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         :root {

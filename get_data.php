@@ -142,6 +142,8 @@ ob_start();
                 $dt = new DateTime($row['waktu']);
                 $periode_awal = $dt->format('1 F Y'); // 1 <Month> <Year>
                 $periode_akhir = $dt->format('t F Y'); // last day of month
+                $now = new DateTime();
+                $jatuh_tempo = $now->format('20 F Y');
 
                 // bulan & tahun pembuatan invoice = bulan setelah periode berjalan
                 $dt_create = clone $dt;
@@ -170,7 +172,7 @@ ob_start();
                     "Nomor Invoice : $invoice_no\n".
                     "Layanan : " . ($paket ?: 'Reguler CLEON') . "\n".
                     "Periode Berjalan : $periode_awal - $periode_akhir\n".
-                    "Jatuh Tempo : " . date("j F Y", strtotime($dt_create->format('Y-m-20'))) . "\n".
+                    "Jatuh Tempo : $jatuh_tempo\n".
                     "Jumlah Tagihan : Rp$tagihan\n".
                     "--------------------------------------------\n".
                     "Untuk transfer bisa melalui:\n".

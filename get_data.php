@@ -54,7 +54,8 @@ $totalResult = $koneksi->query($totalQuery);
 $totalData = (int)($totalResult->fetch_assoc()['total'] ?? 0);
 $totalPages = (int)ceil($totalData / $limit) ?: 1;
 
-$sql = "SELECT * FROM $table_name" . $where . " ORDER BY id DESC LIMIT $limit OFFSET $offset";
+//ASC urut dari id kecil ke gede
+$sql = "SELECT * FROM $table_name" . $where . " ORDER BY id ASC LIMIT $limit OFFSET $offset";
 $result = $koneksi->query($sql);
 
 $nomor_admin = "6285174328821"; // Ganti dengan nomor Admin Anda

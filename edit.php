@@ -129,6 +129,10 @@ if (isset($_POST['update'])) {
             if (preg_match('/^\d{4}-\d{2}$/', $langganan_aktif_hingga)) {
                 $escaped_masa = $koneksi->real_escape_string($langganan_aktif_hingga);
                 $assignments[] = "langganan_aktif_hingga='" . $escaped_masa . "-01'";
+
+            // JIKA admin mengubah langganan_selesai, juga perbarui kolom 'waktu' sehingga periode_akhir mengikuti nilai baru
+            $assignments[] = "waktu='" . $raw_selesai . "'";
+
             } else {
                 $escaped_masa = $koneksi->real_escape_string($langganan_aktif_hingga);
                 $assignments[] = "langganan_aktif_hingga='" . $escaped_masa . "'";

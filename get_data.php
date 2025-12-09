@@ -54,7 +54,10 @@ $totalResult = $koneksi->query($totalQuery);
 $totalData = (int)($totalResult->fetch_assoc()['total'] ?? 0);
 $totalPages = (int)ceil($totalData / $limit) ?: 1;
 
+<<<<<<< Updated upstream
 //ASC urut dari id kecil ke gede
+=======
+>>>>>>> Stashed changes
 $sql = "SELECT * FROM $table_name" . $where . " ORDER BY id ASC LIMIT $limit OFFSET $offset";
 $result = $koneksi->query($sql);
 

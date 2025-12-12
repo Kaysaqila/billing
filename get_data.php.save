@@ -47,7 +47,7 @@ if (!empty($conditions)) {
     $where = ' WHERE ' . implode(' AND ', $conditions);
 }
 // --- AKHIR DARI LOGIKA ---
-
+		
 
 $totalQuery = "SELECT COUNT(*) as total FROM $table_name" . $where;
 $totalResult = $koneksi->query($totalQuery);
@@ -192,8 +192,8 @@ ob_start();
                     $pesan_tagihan = "Kepada Pelanggan Wifi Bapak/Ibu: $nama, alamat: $alamat, Paket: $paket, Total Tagihan: Rp$tagihan, Pembayaran mulai tanggal 1-6 tiap bulannya, Konfirmasikan pembayaran ke nomor wa.me/6281578629760, abaikan jika sudah melakukan pembayaran, terima kasih";
                 } else {
                     // Pesan jogja
-                    $awal_bulan   = date("1 F Y");
-                    $akhir_bulan  = date("t F Y");
+                    $awal_bulan   = date("1 F Y", strtotime($row['waktu']));
+                    $akhir_bulan  = date("t F Y", strtotime($row['waktu']));
 
                     $pesan_tagihan = "Pelanggan Yth.\n".
                     "Bapak/Ibu/Sdr : $nama\n".
@@ -214,23 +214,20 @@ ob_start();
 
                 $pesan_tagihan_encode = urlencode($pesan_tagihan);
 
-                                // pesan resi
-                                $tanggal_bayar = date("j F Y");
-                                // Untuk resi, tampilkan periode invoice (bulan setelah periode berjalan)
-                                $periode_awal_resi = $dt_create->format('1 F Y');
-                                $periode_akhir_resi = $dt_create->format('t F Y');
-                                $pesan_resi = "Pelanggan CLEON Yth,\n".
-                                    "Bapak/Ibu/Sdr : $nama\n".
-                                    "Terima kasih telah memilih CLEON.\n".
-                                    "Pembayaran di bawah ini sudah terkonfirmasi :\n".
-                                    "------------------------------------------------\n".
-                                    "No Pelanggan : $id_pelanggan\n".
-                                    "Periode : $periode_awal_resi - $periode_akhir_resi\n".
-                                    "Total : Rp$tagihan,00\n".
-                                    "Tgl Bayar : $tanggal_bayar\n".
-                                    "Layanan : $paket\n\n".
-                                    "--------------------------------------------\n".
-                                    "Terimakasih sudah berlangganan CLEON.";
+                // pesan resi 
+                $tanggal_bayar = date("j F Y");
+                $pesan_resi = "Pelanggan CLEON Yth,\n".
+                    "Bapak/Ibu/Sdr : $nama\n".
+                    "Terima kasih telah memilih CLEON.\n".
+                    "Pembayaran di bawah ini sudah terkonfirmasi :\n".
+                    "------------------------------------------------\n".
+                    "No Pelanggan : $id_pelanggan\n".
+                    "Periode : $periode_awal - $periode_akhir\n".
+                    "Total : Rp$tagihan,00\n".
+                    "Tgl Bayar : $tanggal_bayar\n".
+                    "Layanan : $paket\n\n".
+                    "--------------------------------------------\n".
+                    "Terimakasih sudah berlangganan CLEON.";
 
                 $pesan_resi_encode = urlencode($pesan_resi);
                 ?>

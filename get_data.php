@@ -139,10 +139,16 @@ ob_start();
                 $tagihan      = number_format($row['tagihan'], 0, ',', '.');
 
                 // periode berjalan (awal dan akhir bulan dari kolom waktu)
-                $dt = new DateTime($row['waktu']);
-                $periode_awal = $dt->format('1 F Y'); // 1 <Month> <Year>
-                $periode_akhir = $dt->format('t F Y'); // last day of month
                 $now = new DateTime();
+                $dt = $now; // Define $dt as $now
+
+                // ambil 1 bulan sebelumnya
+                $last_month = (clone $now)->modify('-1 month');
+
+                $periode_awal  = $last_month->format('1 F Y');
+                $periode_akhir = $last_month->format('t F Y');
+
+                // tanggal jatuh tempo = tanggal 20 bulan ini
                 $jatuh_tempo = $now->format('20 F Y');
 
                 // bulan & tahun pembuatan invoice = bulan setelah periode berjalan
@@ -217,8 +223,8 @@ ob_start();
                                 // pesan resi
                                 $tanggal_bayar = date("j F Y");
                                 // Untuk resi, tampilkan periode invoice (bulan setelah periode berjalan)
-                                $periode_awal_resi = $dt_create->format('1 F Y');
-                                $periode_akhir_resi = $dt_create->format('t F Y');
+                                $periode_awal_resi = $dt->format('1 F Y');
+                                $periode_akhir_resi = $dt->format('t F Y');
                                 $pesan_resi = "Pelanggan CLEON Yth,\n".
                                     "Bapak/Ibu/Sdr : $nama\n".
                                     "Terima kasih telah memilih CLEON.\n".

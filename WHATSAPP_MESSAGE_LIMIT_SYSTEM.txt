@@ -1,0 +1,289 @@
+════════════════════════════════════════════════════════════════════════════
+        WHATSAPP MESSAGE LIMITING SYSTEM - DOCUMENTATION
+════════════════════════════════════════════════════════════════════════════
+
+🎯 OVERVIEW
+────────────────────────────────────────────────────────────────────────────
+Sistem ini membatasi pengiriman pesan WhatsApp otomatis untuk mencegah 
+akun WhatsApp di-ban karena terlalu banyak pesan dalam waktu singkat.
+
+Limit: 40 pesan per hari per wilayah (jogja/samiran/godean)
+Status: ACTIVE (testing dengan limit 10, production dengan limit 40)
+
+
+════════════════════════════════════════════════════════════════════════════
+🔧 BAGAIMANA SISTEM BEKERJA
+════════════════════════════════════════════════════════════════════════════
+
+1. USER KLIK "KIRIM TAGIHAN" DI DASHBOARD
+   └─ Button trigger event listener di dashboard
+
+2. SYSTEM CHECK COUNTER
+   ├─ API check_message_limit.php?method=check
+   ├─ Query: COUNT(*) FROM message_send_log WHERE wilayah=X AND DATE(created_at)=TODAY
+   └─ Return: {count, limit, reached_limit}
+
+3. DECISION LOGIC
+   ├─ Jika reached_limit = false
+   │  └─ Kirim pesan WhatsApp langsung + increment counter
+   │
+   └─ Jika reached_limit = true
+      └─ Tampilkan MODAL
+         ├─ User harus salin pesan manual
+         └─ Klik "Salin ke Clipboard" → Buka WhatsApp Web manual
+
+4. INCREMENT COUNTER
+   ├─ API check_message_limit.php?method=increment
+   ├─ INSERT new record ke message_send_log
+   └─ Return: {success, new_count, reached_limit}
+
+
+════════════════════════════════════════════════════════════════════════════
+📊 DATABASE SCHEMA
+════════════════════════════════════════════════════════════════════════════
+
+Table: message_send_log
+┌─────────────────┬──────────────────┬──────────────────────┐
+│ Column          │ Type             │ Description          │
+├─────────────────┼──────────────────┼──────────────────────┤
+│ id              │ INT AUTO_INCREMENT│ Primary Key          │
+│ wilayah         │ VARCHAR(50)      │ jogja/samiran/godean │
+│ id_pelanggan    │ VARCHAR(100)     │ Customer ID          │
+│ message_type    │ VARCHAR(50)      │ Tipe: tagihan/resi   │
+│ created_at      │ TIMESTAMP        │ Waktu create (UTC)   │
+└─────────────────┴──────────────────┴──────────────────────┘
+
+CREATE TABLE: 
+CREATE TABLE message_send_log (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    wilayah VARCHAR(50) NOT NULL,
+    id_pelanggan VARCHAR(100),
+    message_type VARCHAR(50) DEFAULT 'tagihan',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX (wilayah, created_at)
+);
+
+
+════════════════════════════════════════════════════════════════════════════
+⚙️ FILE-FILE YANG TERLIBAT
+════════════════════════════════════════════════════════════════════════════
+
+1. check_message_limit.php (CORE API)
+   ├─ Endpoint: check_message_limit.php?method=check
+   │  └─ Purpose: Check apakah sudah mencapai limit hari ini
+   │
+   └─ Endpoint: check_message_limit.php?method=increment
+      └─ Purpose: Increment counter + insert ke database
+
+2. dashboard_jogja.php
+   ├─ Modal HTML di line ~629-675
+   ├─ Modal CSS di line ~523-538
+   └─ JavaScript functions:
+      ├─ handleKirimTagihan() - Event handler saat klik "Kirim Tagihan"
+      ├─ openMessageModal() - Tampilkan modal
+      ├─ closeMessageModal() - Tutup modal
+      ├─ copyMessageToClipboard() - Copy pesan ke clipboard
+      └─ sendMessageAndIncrement() - Increment counter & buka WhatsApp
+
+3. dashboard_samiran.php
+   └─ Identik dengan dashboard_jogja.php (sama struktur modal & function)
+
+4. dashboard_godean.php
+   └─ Identik dengan dashboard_jogja.php (sama struktur modal & function)
+
+5. get_data.php
+   └─ Generate button dengan data attributes:
+      ├─ data-id (row ID)
+      ├─ data-nomor (WhatsApp number)
+      ├─ data-pesan (message content)
+      └─ data-id-pelanggan (customer ID)
+
+
+════════════════════════════════════════════════════════════════════════════
+🔑 KONFIGURASI LIMIT
+════════════════════════════════════════════════════════════════════════════
+
+Lokasi: check_message_limit.php (line 20 & line 38)
+
+TESTING MODE (limit 10):
+┌────────────────────────────────────────────────────────────┐
+│ Line 20:  'limit' => 10,                                   │
+│ Line 38:  'reached_limit' => $newCount >= 10              │
+└────────────────────────────────────────────────────────────┘
+
+PRODUCTION MODE (limit 40):
+┌────────────────────────────────────────────────────────────┐
+│ Line 20:  'limit' => 40,                                   │
+│ Line 38:  'reached_limit' => $newCount >= 40              │
+└────────────────────────────────────────────────────────────┘
+
+CARA MENGUBAH:
+1. Buka check_message_limit.php
+2. Find & Replace:
+   - Find: 'limit' => 10
+   - Replace: 'limit' => 40
+3. Find & Replace:
+   - Find: $newCount >= 10
+   - Replace: $newCount >= 40
+4. Save & test
+
+
+════════════════════════════════════════════════════════════════════════════
+🧪 TESTING & VERIFICATION
+════════════════════════════════════════════════════════════════════════════
+
+Test 1: Verify Counter Increment
+──────────────────────────────────
+1. Buka dashboard (login sebagai salah satu wilayah)
+2. Klik "Kirim Tagihan" beberapa kali (misal 5x)
+3. Buka terminal & check database:
+   mysql> SELECT COUNT(*) FROM message_send_log 
+          WHERE wilayah='jogja' AND DATE(created_at)=CURDATE();
+   Result: Harus 5
+
+Test 2: Verify Modal Trigger
+────────────────────────────
+1. Buka dashboard
+2. Klik "Kirim Tagihan" hingga counter = limit (10)
+3. Klik "Kirim Tagihan" sekali lagi
+4. MODAL harus muncul dengan pesan
+5. Button "Salin ke Clipboard" harus berfungsi
+
+Test 3: Verify Counter Reset Daily
+───────────────────────────────────
+1. Tunggu hingga 00:00 (UTC)
+2. Counter otomatis reset (CURDATE() berubah)
+3. Klik "Kirim Tagihan" lagi → Seharusnya bisa langsung WA (tidak modal)
+
+Test 4: Verify Per-Wilayah Counter
+──────────────────────────────────
+1. Login sebagai JOGJA, klik "Kirim Tagihan" 10x
+2. Logout
+3. Login sebagai SAMIRAN
+4. Klik "Kirim Tagihan" → Seharusnya bisa langsung WA (counter samiran masih 0)
+5. Database query:
+   SELECT wilayah, COUNT(*) as count FROM message_send_log 
+   WHERE DATE(created_at)=CURDATE() GROUP BY wilayah;
+   Result: jogja=10, samiran=1, godean=0
+
+
+════════════════════════════════════════════════════════════════════════════
+🐛 TROUBLESHOOTING
+════════════════════════════════════════════════════════════════════════════
+
+Problem 1: Modal tidak muncul setelah limit tercapai
+───────────────────────────────────────────────────
+Solution:
+  1. Buka F12 (browser console)
+  2. Check apakah error message ada
+  3. Test API manually: 
+     - fetch('check_message_limit.php?method=check').then(r => r.json()).then(d => console.log(d))
+     - Harus return: {count: X, limit: 10, reached_limit: true/false}
+  4. Jika reached_limit=false tapi sudah 10 pesan:
+     - Check database apakah data sudah tersimpan
+     - Check session apakah wilayah tereset
+
+Problem 2: Counter tidak bertambah
+──────────────────────────────────
+Solution:
+  1. Check database permissions (INSERT privilege)
+  2. Verify database table exist & columns correct
+  3. Check PHP error log (check Laravel/PHP logs)
+  4. Verify session['wilayah'] ada & benar
+
+Problem 3: Modal button "Salin ke Clipboard" tidak bekerja
+──────────────────────────────────────────────────────────
+Solution:
+  1. Check browser console error
+  2. Pastikan HTTPS atau localhost (clipboard API requirement)
+  3. Check copyMessageToClipboard() function ada
+  4. Verify event.target.closest('button') valid
+
+Problem 4: WhatsApp link tidak terbuka
+──────────────────────────────────────
+Solution:
+  1. Verify nomor WhatsApp format benar (628123456789 tanpa +)
+  2. Check URL encoding: encodeURIComponent()
+  3. Test manual: https://wa.me/628123456789?text=test
+
+
+════════════════════════════════════════════════════════════════════════════
+📋 MAINTENANCE CHECKLIST
+════════════════════════════════════════════════════════════════════════════
+
+Weekly:
+☐ Check database size (message_send_log table)
+☐ Verify no SQL errors in logs
+☐ Test modal display on each dashboard
+
+Monthly:
+☐ Archive old message_send_log records (older than 90 days)
+☐ Check limit effectiveness (berapa % reach limit)
+☐ Review WhatsApp account status (tidak di-ban)
+
+Quarterly:
+☐ Update limit value sesuai kebutuhan
+☐ Test database query performance
+☐ Review system logs for any issues
+
+
+════════════════════════════════════════════════════════════════════════════
+🚀 PRODUCTION DEPLOYMENT CHECKLIST
+════════════════════════════════════════════════════════════════════════════
+
+Before Go Live:
+☐ Change limit dari 10 → 40 di check_message_limit.php
+☐ Test lengkap: counter, modal, reset daily
+☐ Test semua 3 wilayah (jogja, samiran, godean)
+☐ Verify database backup strategy
+☐ Check error logging aktif
+☐ Test WhatsApp account tidak di-ban dengan banyak pesan
+
+After Go Live:
+☐ Monitor server logs
+☐ Check WhatsApp account health
+☐ Monitor user feedback
+☐ Setup alerts jika counter mencapai threshold tertentu
+
+
+════════════════════════════════════════════════════════════════════════════
+📞 SUPPORT & REFERENCE
+════════════════════════════════════════════════════════════════════════════
+
+If Issues Occur:
+1. Check browser console (F12)
+2. Check server logs (error_log)
+3. Query database:
+   SELECT * FROM message_send_log 
+   WHERE DATE(created_at)=CURDATE() 
+   ORDER BY created_at DESC LIMIT 10;
+4. Check API response:
+   curl "http://localhost/billing_admin/check_message_limit.php?method=check"
+
+Related Files:
+- API: check_message_limit.php
+- Dashboards: dashboard_jogja.php, dashboard_samiran.php, dashboard_godean.php
+- Data Generator: get_data.php
+- Database: message_send_log table
+
+
+════════════════════════════════════════════════════════════════════════════
+📅 CHANGELOG
+════════════════════════════════════════════════════════════════════════════
+
+v1.0 - 2026-01-15 (CURRENT)
+├─ Initial implementation
+├─ Message limiting system with modal
+├─ Per-wilayah counter
+├─ Daily reset with CURDATE()
+├─ Testing with limit 10
+└─ Ready for production (limit 40)
+
+Future Improvements:
+☐ Configurable limit per wilayah
+☐ Dashboard widget untuk monitor counter
+☐ Auto-pause feature saat mencapai 80% limit
+☐ Monthly report generated
+
+
+════════════════════════════════════════════════════════════════════════════

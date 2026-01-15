@@ -518,6 +518,21 @@ if (!isset($_SESSION['wilayah']) || $_SESSION['wilayah'] !== 'godean') {
         }
     .name-cell { display: block; word-break: break-word; overflow-wrap: anywhere; text-align: left; padding: 6px 0; border-bottom: none; }
     }
+
+    /* ===== MODAL ANIMATIONS ===== */
+    #message-modal.open {
+        opacity: 1 !important;
+        pointer-events: auto !important;
+    }
+
+    #message-modal.open .backdrop {
+        opacity: 1 !important;
+    }
+
+    #message-modal.open .modal-box {
+        opacity: 1 !important;
+        transform: translateY(0) scale(1) !important;
+    }
     </style>
 </head>
 <body>
@@ -631,9 +646,9 @@ if (!isset($_SESSION['wilayah']) || $_SESSION['wilayah'] !== 'godean') {
             </div>
 
         <!-- MODAL UNTUK MENAMPILKAN PESAN WHATSAPP (KETIKA LIMIT TERCAPAI) -->
-        <div id="message-modal" style="display:none; position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 3000; pointer-events: none; opacity: 0; transition: opacity 280ms cubic-bezier(.2,.9,.2,1);">
+        <div id="message-modal" style="position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 3000; opacity: 0; pointer-events: none; transition: opacity 280ms cubic-bezier(.2,.9,.2,1);">
             <div class="backdrop" onclick="closeMessageModal()" style="position: absolute; inset: 0; background: rgba(6,12,24,0.56); backdrop-filter: blur(6px); opacity: 0; transition: opacity 280ms cubic-bezier(.2,.9,.2,1);"></div>
-            <div class="modal-box" style="position: relative; width: 90%; max-width: 700px; max-height: 80vh; background: #fff; border-radius: 10px; transform: translateY(12px) scale(.98); opacity: 0; transition: transform 320ms cubic-bezier(.2,.9,.2,1), opacity 260ms ease; box-shadow: 0 30px 60px rgba(8,15,30,0.35); overflow: hidden; display: flex; flex-direction: column;">
+            <div class="modal-box" style="position: relative; width: 90%; max-width: 700px; max-height: 80vh; background: #fff; border-radius: 10px; transform: translateY(12px) scale(.98); opacity: 0; transition: transform 320ms cubic-bezier(.2,.9,.2,1), opacity 260ms ease; box-shadow: 0 30px 60px rgba(8,15,30,0.35); overflow: hidden; display: flex; flex-direction: column; pointer-events: auto;">
                 <div class="modal-header">
                     <div class="modal-title">Salin Pesan WhatsApp Billing</div>
                     <button class="modal-close" onclick="closeMessageModal()"><i class="fas fa-times"></i></button>
@@ -643,9 +658,6 @@ if (!isset($_SESSION['wilayah']) || $_SESSION['wilayah'] !== 'godean') {
                     <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                         <button onclick="copyMessageToClipboard()" style="flex: 1; padding: 12px; background: #27ae60; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px;">
                             <i class="fas fa-copy"></i> Salin ke Clipboard
-                        </button>
-                        <button onclick="openWhatsAppManual()" style="flex: 1; padding: 12px; background: #25d366; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px;">
-                            <i class="fas fa-comment"></i> Buka WhatsApp Web
                         </button>
                     </div>
                     <div style="margin-top: 20px; padding: 15px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; color: #856404; font-size: 13px;">
@@ -921,15 +933,31 @@ if (!isset($_SESSION['wilayah']) || $_SESSION['wilayah'] !== 'godean') {
             idPelanggan: ''
         };
 
+        // Event listener untuk tombol "Kirim Tagihan"
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('kirim-tagihan-btn')) {
+                e.preventDefault();
+                const button = e.target;
+                const rowId = button.getAttribute('data-id');
+                const nomor = button.getAttribute('data-nomor');
+                const pesan = button.getAttribute('data-pesan');
+                const idPelanggan = button.getAttribute('data-id-pelanggan');
+                
+                handleKirimTagihan(e, rowId, nomor, pesan, idPelanggan);
+            }
+        });
+
         function handleKirimTagihan(event, rowId, nomor, pesan, idPelanggan) {
-            event.preventDefault();
-            
             // Check terlebih dahulu apakah sudah mencapai limit
+            console.log('handleKirimTagihan called:', {rowId, nomor, idPelanggan});
+            
             fetch('check_message_limit.php?method=check')
                 .then(res => res.json())
                 .then(data => {
+                    console.log('API Response:', data);
                     if (data.reached_limit) {
                         // Limit tercapai, tampilkan modal dengan pesan
+                        console.log('Limit reached, showing modal');
                         currentMessageData = {
                             pesan: pesan,
                             nomor_tujuan: nomor,
@@ -938,6 +966,7 @@ if (!isset($_SESSION['wilayah']) || $_SESSION['wilayah'] !== 'godean') {
                         openMessageModal(pesan);
                     } else {
                         // Belum mencapai limit, kirim langsung
+                        console.log('Limit not reached, sending message');
                         sendMessageAndIncrement(nomor, pesan, idPelanggan);
                     }
                 })
@@ -964,11 +993,12 @@ if (!isset($_SESSION['wilayah']) || $_SESSION['wilayah'] !== 'godean') {
                     window.open(`https://wa.me/${nomor}?text=${pesanEncode}`, '_blank');
                     
                     // Tunjukkan notif jika sudah semakin dekat ke limit
-                    if (data.new_count >= 35) {
+                    const warningThreshold = Math.ceil(data.limit * 0.875); // 87.5% dari limit
+                    if (data.new_count >= warningThreshold) {
                         Swal.fire({
                             icon: 'warning',
                             title: 'Mendekati Batas',
-                            text: `Anda telah mengirim ${data.new_count}/40 pesan hari ini. Sisa ${40 - data.new_count} pesan lagi.`,
+                            text: `Anda telah mengirim ${data.new_count}/${data.limit} pesan hari ini. Sisa ${data.limit - data.new_count} pesan lagi.`,
                             timer: 3000,
                             timerProgressBar: true
                         });
@@ -985,9 +1015,17 @@ if (!isset($_SESSION['wilayah']) || $_SESSION['wilayah'] !== 'godean') {
 
         function openMessageModal(pesan) {
             const modal = document.getElementById('message-modal');
-            document.getElementById('message-content').textContent = pesan;
-            modal.style.display = 'flex';
-            setTimeout(() => modal.classList.add('open'), 10);
+            const messageContent = document.getElementById('message-content');
+            if (!modal || !messageContent) {
+                console.error('Modal elements not found!');
+                return;
+            }
+            messageContent.textContent = pesan;
+            console.log('Setting message:', pesan);
+            setTimeout(() => {
+                modal.classList.add('open');
+                console.log('Added open class to modal');
+            }, 50);
         }
 
         function closeMessageModal() {
@@ -998,35 +1036,30 @@ if (!isset($_SESSION['wilayah']) || $_SESSION['wilayah'] !== 'godean') {
 
         function copyMessageToClipboard() {
             const pesan = currentMessageData.pesan;
+            const button = event.target.closest('button');
+            const originalText = button.innerHTML;
+            
             navigator.clipboard.writeText(pesan).then(() => {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Berhasil!',
-                    text: 'Pesan sudah disalin ke clipboard',
-                    timer: 2000,
-                    showConfirmButton: false
-                });
+                button.innerHTML = '<i class="fas fa-check"></i> Berhasil disalin!';
+                button.style.background = '#27ae60';
+                button.style.boxShadow = '0 0 0 3px rgba(39, 174, 96, 0.2)';
+                
+                setTimeout(() => {
+                    button.innerHTML = originalText;
+                    button.style.background = '#27ae60';
+                    button.style.boxShadow = 'none';
+                }, 2000);
             }).catch(err => {
-                Swal.fire('Error', 'Gagal menyalin pesan', 'error');
+                button.innerHTML = '<i class="fas fa-exclamation-circle"></i> Gagal!';
+                button.style.background = '#e74c3c';
+                setTimeout(() => {
+                    button.innerHTML = originalText;
+                    button.style.background = '#27ae60';
+                }, 2000);
             });
         }
 
-        function openWhatsAppManual() {
-            // Buka WhatsApp Web
-            window.open('https://web.whatsapp.com/', '_blank');
-            
-            // Increment counter (karena user akan mengirim manual)
-            const formData = new FormData();
-            formData.append('id_pelanggan', currentMessageData.idPelanggan);
-            
-            fetch('check_message_limit.php?method=increment', {
-                method: 'POST',
-                body: formData
-            })
-            .catch(err => console.error('Error incrementing:', err));
-            
-            closeMessageModal();
-        }
+
     </script>   
 
 </body>

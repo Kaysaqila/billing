@@ -347,6 +347,30 @@ if (!isset($_SESSION['wilayah']) || $_SESSION['wilayah'] !== 'godean') {
     #add-modal .btn-primary { background: #f1f5f9; (90deg,var(--accent),#2980b9); color: #213; }
     #add-modal .btn-muted { background: #f1f5f9; color: #213; }
 
+    /* --- STYLES UNTUK MESSAGE MODAL --- */
+    #message-modal {
+        position: fixed !important;
+        inset: 0 !important;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        z-index: 3000;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 280ms cubic-bezier(.2,.9,.2,1);
+    }
+    #message-modal.open {
+        pointer-events: auto;
+        opacity: 1;
+    }
+    #message-modal.open .backdrop {
+        opacity: 1;
+    }
+    #message-modal.open .modal-box {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+
     /* --- STYLES UNTUK RESPONSIVE --- */
 /* Tambahkan kode ini di bagian paling bawah tag <style> Anda */
 
@@ -605,6 +629,31 @@ if (!isset($_SESSION['wilayah']) || $_SESSION['wilayah'] !== 'godean') {
 
         <div class="pagination" id="pagination">
             </div>
+
+        <!-- MODAL UNTUK MENAMPILKAN PESAN WHATSAPP (KETIKA LIMIT TERCAPAI) -->
+        <div id="message-modal" style="display:none; position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 3000; pointer-events: none; opacity: 0; transition: opacity 280ms cubic-bezier(.2,.9,.2,1);">
+            <div class="backdrop" onclick="closeMessageModal()" style="position: absolute; inset: 0; background: rgba(6,12,24,0.56); backdrop-filter: blur(6px); opacity: 0; transition: opacity 280ms cubic-bezier(.2,.9,.2,1);"></div>
+            <div class="modal-box" style="position: relative; width: 90%; max-width: 700px; max-height: 80vh; background: #fff; border-radius: 10px; transform: translateY(12px) scale(.98); opacity: 0; transition: transform 320ms cubic-bezier(.2,.9,.2,1), opacity 260ms ease; box-shadow: 0 30px 60px rgba(8,15,30,0.35); overflow: hidden; display: flex; flex-direction: column;">
+                <div class="modal-header">
+                    <div class="modal-title">Salin Pesan WhatsApp Billing</div>
+                    <button class="modal-close" onclick="closeMessageModal()"><i class="fas fa-times"></i></button>
+                </div>
+                <div style="padding: 20px; overflow-y: auto; flex: 1;">
+                    <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin-bottom: 15px; font-family: monospace; white-space: pre-wrap; word-wrap: break-word; line-height: 1.6; font-size: 13px;" id="message-content"></div>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button onclick="copyMessageToClipboard()" style="flex: 1; padding: 12px; background: #27ae60; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px;">
+                            <i class="fas fa-copy"></i> Salin ke Clipboard
+                        </button>
+                        <button onclick="openWhatsAppManual()" style="flex: 1; padding: 12px; background: #25d366; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px;">
+                            <i class="fas fa-comment"></i> Buka WhatsApp Web
+                        </button>
+                    </div>
+                    <div style="margin-top: 20px; padding: 15px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; color: #856404; font-size: 13px;">
+                        <strong>ℹ️ Info:</strong> Anda telah mencapai batas pengiriman pesan otomatis untuk hari ini (40 pesan). Silakan salin pesan di atas dan kirim secara manual melalui WhatsApp Web.
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -864,6 +913,120 @@ if (!isset($_SESSION['wilayah']) || $_SESSION['wilayah'] !== 'godean') {
                 submitButton.innerHTML = 'Simpan';
             });
         });
+
+        // ===== FUNGSI-FUNGSI UNTUK MESSAGE MODAL & PEMBATASAN WHATSAPP =====
+        let currentMessageData = {
+            pesan: '',
+            nomor_tujuan: '',
+            idPelanggan: ''
+        };
+
+        function handleKirimTagihan(event, rowId, nomor, pesan, idPelanggan) {
+            event.preventDefault();
+            
+            // Check terlebih dahulu apakah sudah mencapai limit
+            fetch('check_message_limit.php?method=check')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.reached_limit) {
+                        // Limit tercapai, tampilkan modal dengan pesan
+                        currentMessageData = {
+                            pesan: pesan,
+                            nomor_tujuan: nomor,
+                            idPelanggan: idPelanggan
+                        };
+                        openMessageModal(pesan);
+                    } else {
+                        // Belum mencapai limit, kirim langsung
+                        sendMessageAndIncrement(nomor, pesan, idPelanggan);
+                    }
+                })
+                .catch(err => {
+                    console.error('Error checking limit:', err);
+                    Swal.fire('Error', 'Gagal mengecek batas pengiriman', 'error');
+                });
+        }
+
+        function sendMessageAndIncrement(nomor, pesan, idPelanggan) {
+            // Increment counter
+            const formData = new FormData();
+            formData.append('id_pelanggan', idPelanggan);
+            
+            fetch('check_message_limit.php?method=increment', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    // Buka WhatsApp
+                    const pesanEncode = encodeURIComponent(pesan);
+                    window.open(`https://wa.me/${nomor}?text=${pesanEncode}`, '_blank');
+                    
+                    // Tunjukkan notif jika sudah semakin dekat ke limit
+                    if (data.new_count >= 35) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Mendekati Batas',
+                            text: `Anda telah mengirim ${data.new_count}/40 pesan hari ini. Sisa ${40 - data.new_count} pesan lagi.`,
+                            timer: 3000,
+                            timerProgressBar: true
+                        });
+                    }
+                } else {
+                    Swal.fire('Error', 'Gagal mencatat pengiriman pesan', 'error');
+                }
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                Swal.fire('Error', 'Gagal menghubungi server', 'error');
+            });
+        }
+
+        function openMessageModal(pesan) {
+            const modal = document.getElementById('message-modal');
+            document.getElementById('message-content').textContent = pesan;
+            modal.style.display = 'flex';
+            setTimeout(() => modal.classList.add('open'), 10);
+        }
+
+        function closeMessageModal() {
+            const modal = document.getElementById('message-modal');
+            modal.classList.remove('open');
+            setTimeout(() => modal.style.display = 'none', 320);
+        }
+
+        function copyMessageToClipboard() {
+            const pesan = currentMessageData.pesan;
+            navigator.clipboard.writeText(pesan).then(() => {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil!',
+                    text: 'Pesan sudah disalin ke clipboard',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            }).catch(err => {
+                Swal.fire('Error', 'Gagal menyalin pesan', 'error');
+            });
+        }
+
+        function openWhatsAppManual() {
+            // Buka WhatsApp Web
+            window.open('https://web.whatsapp.com/', '_blank');
+            
+            // Increment counter (karena user akan mengirim manual)
+            const formData = new FormData();
+            formData.append('id_pelanggan', currentMessageData.idPelanggan);
+            
+            fetch('check_message_limit.php?method=increment', {
+                method: 'POST',
+                body: formData
+            })
+            .catch(err => console.error('Error incrementing:', err));
+            
+            closeMessageModal();
+        }
     </script>   
 
 </body>

@@ -241,7 +241,7 @@ ob_start();
                 $pesan_resi_encode = urlencode($pesan_resi);
                 ?>
                 <div class="action-row">
-                    <a href="https://wa.me/<?= $tujuan ?>?text=<?= $pesan_tagihan_encode ?>" target="_blank"><button class="action-btn btn-tagihan" aria-label="Kirim Tagihan">Kirim Tagihan</button></a>
+                    <button class="action-btn btn-tagihan" onclick="handleKirimTagihan(event, <?= $row['id']; ?>, '<?= $tujuan; ?>', '<?= addslashes($pesan_tagihan); ?>', '<?= $id_pelanggan; ?>')" aria-label="Kirim Tagihan">Kirim Tagihan</button>
                     <?php if (!(isset($_SESSION['wilayah']) && $_SESSION['wilayah'] === 'samiran')): ?>
                         <button class="action-btn btn-resi" onclick="sendReceipt(<?= $row['id']; ?>, '<?= $tujuan; ?>', '<?= $pesan_resi_encode; ?>')" aria-label="Kirim Resi">Kirim Resi</button>
                     <?php endif; ?>

@@ -675,7 +675,7 @@ if (!isset($_SESSION['wilayah']) || $_SESSION['wilayah'] !== 'samiran') {
                     <div id="message-content"></div>
                     <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px;">
                         <button onclick="copyMessageToClipboard(event)" style="flex: 1; padding: 12px; background: #27ae60; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px;">
-                            <i class="fas fa-copy"></i> Salin ke Clipboard
+                            Salin ke Clipboard
                         </button>
                     </div>
                 </div>
@@ -962,37 +962,143 @@ if (!isset($_SESSION['wilayah']) || $_SESSION['wilayah'] !== 'samiran') {
             }, 320);
         }
 
-        function copyMessageToClipboard(e) {
-            const button = e.target.closest('button');
-            const originalHTML = button.innerHTML;
+        function fallbackCopyText(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            textarea.style.left = '-9999px'; // Tambahkan ini untuk pastikan tidak terlihat
+            textarea.style.top = '0';
+            textarea.setAttribute('readonly', ''); // Tambahkan readonly
+            document.body.appendChild(textarea);
 
-            if (!currentMessageText) {
-                Swal.fire('Error', 'Pesan kosong', 'error');
+            // Pilih teks dengan lebih hati-hati
+            textarea.select();
+            textarea.setSelectionRange(0, 99999); // Untuk mobile devices
+
+            try {
+                const successful = document.execCommand('copy');
+                if (!successful) {
+                    throw new Error('Copy command failed');
+                }
+            } catch (err) {
+                console.error('Fallback copy gagal', err);
+                return false;
+            } finally {
+                document.body.removeChild(textarea);
+            }
+            return true;
+        }
+
+        function copyMessageToClipboard(e) {
+            // Cegah event bubbling jika perlu
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const button = e.target.closest('button');
+            if (!button) return;
+            
+            const originalHTML = button.innerHTML;
+            const buttonText = button.querySelector('.button-text') || button;
+
+            // Cek apakah currentMessageText ada dan valid
+            if (!currentMessageText || typeof currentMessageText !== 'string' || currentMessageText.trim() === '') {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Pesan kosong atau tidak valid'
+                });
                 return;
             }
 
-            navigator.clipboard.writeText(currentMessageText)
-                .then(() => {
-                    button.innerHTML = '<i class="fas fa-check"></i> Berhasil disalin!';
-                    button.style.background = '#27ae60';
+            // Simpan text yang akan dicopy
+            const textToCopy = currentMessageText.trim();
 
-                    setTimeout(() => {
-                        button.innerHTML = originalHTML;
-                        button.style.background = '#27ae60';
-                    }, 2000);
-                })
-                .catch(err => {
-                    console.error(err);
-                    button.innerHTML = '<i class="fas fa-times"></i> Gagal menyalin';
-                    button.style.background = '#e74c3c';
+            // Tampilkan loading state
+            if (buttonText.textContent) {
+                buttonText.textContent = 'Menyalin...';
+            }
+            button.disabled = true;
 
-                    setTimeout(() => {
-                        button.innerHTML = originalHTML;
-                        button.style.background = '#27ae60';
-                    }, 2000);
+            // Fungsi untuk reset button state
+            const resetButton = () => {
+                if (buttonText.textContent) {
+                    buttonText.textContent = originalHTML;
+                }
+                button.disabled = false;
+            };
+
+            // Fungsi untuk menampilkan sukses
+            const showSuccess = () => {
+                if (buttonText.textContent) {
+                    buttonText.textContent = '✓ Disalin!';
+                }
+                
+                // Reset setelah 2 detik
+                setTimeout(() => {
+                    resetButton();
+                }, 2000);
+                
+                // Tampilkan notifikasi sukses (opsional)
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil!',
+                    text: 'Pesan telah disalin ke clipboard',
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 2000,
+                    timerProgressBar: true
                 });
+            };
+
+            // Fungsi untuk menangani error
+            const handleError = (error) => {
+                console.error('Gagal menyalin:', error);
+                resetButton();
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal',
+                    text: 'Tidak dapat menyalin pesan. Silakan coba lagi.'
+                });
+            };
+
+            // Coba Clipboard API modern (hanya di HTTPS)
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(textToCopy)
+                    .then(() => {
+                        showSuccess();
+                    })
+                    .catch((err) => {
+                        console.warn('Clipboard API gagal, mencoba fallback:', err);
+                        // Coba fallback method
+                        if (fallbackCopyText(textToCopy)) {
+                            showSuccess();
+                        } else {
+                            handleError(err);
+                        }
+                    });
+            } else {
+                // Gunakan fallback method untuk HTTP atau browser lama
+                if (fallbackCopyText(textToCopy)) {
+                    showSuccess();
+                } else {
+                    handleError(new Error('Fallback method failed'));
+                }
+            }
         }
 
+        // Tambahkan juga listener yang lebih baik
+        document.addEventListener('DOMContentLoaded', function() {
+            // Pastikan semua button dengan class copy-button mendapatkan event listener
+            const copyButtons = document.querySelectorAll('.copy-button');
+            copyButtons.forEach(button => {
+                // Hapus listener lama jika ada
+                button.removeEventListener('click', copyMessageToClipboard);
+                // Tambah listener baru
+                button.addEventListener('click', copyMessageToClipboard);
+            });
+        });
         // Event listener untuk menangani submit form tambah pelanggan
         document.getElementById('add-customer-form').addEventListener('submit', function(event) {
             event.preventDefault(); // Mencegah form submit cara biasa

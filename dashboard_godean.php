@@ -739,6 +739,24 @@ if (!isset($_SESSION['wilayah']) || $_SESSION['wilayah'] !== 'godean') {
             });
         }
 
+        // Fungsi untuk handle tombol "Kirim Tagihan" - langsung buka wa.me (Jogja & Godean)
+        document.addEventListener('click', function(e) {
+            const button = e.target.closest('.kirim-tagihan-btn');
+            if (button) {
+                e.preventDefault();
+                e.stopPropagation();
+                const nomor = button.getAttribute('data-nomor');
+                const pesan = button.getAttribute('data-pesan');
+                
+                if (nomor && pesan) {
+                    const pesanEncode = encodeURIComponent(pesan);
+                    window.open(`https://wa.me/${nomor}?text=${pesanEncode}`, '_blank');
+                } else {
+                    console.error('Missing data attributes:', {nomor, pesan});
+                }
+            }
+        });
+
         document.addEventListener('DOMContentLoaded', function() {
             const searchInput = document.getElementById('search');
             let searchTimeout;

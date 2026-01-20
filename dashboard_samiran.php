@@ -344,6 +344,66 @@ if (!isset($_SESSION['wilayah']) || $_SESSION['wilayah'] !== 'samiran') {
     #add-modal .btn-primary { background: #f1f5f9; (90deg,var(--accent),#2980b9); color: #213; }
     #add-modal .btn-muted { background: #f1f5f9; color: #213; }
 
+    /* -- Styles untuk Modal Pesan (khusus Samiran) -- */
+    #message-modal {
+        position: fixed; 
+        inset: 0; 
+        display: none;
+        align-items: center; 
+        justify-content: center; 
+        z-index: 2000; 
+        pointer-events: none; 
+        opacity: 0; 
+        transition: opacity 280ms cubic-bezier(.2,.9,.2,1);
+    }
+    #message-modal.open {
+        pointer-events: auto; 
+        opacity: 1;
+    }
+    #message-modal .backdrop { 
+        position: absolute; 
+        inset: 0; 
+        background: rgba(6,12,24,0.56); 
+        backdrop-filter: blur(6px); 
+        opacity: 0; 
+        transition: opacity 280ms cubic-bezier(.2,.9,.2,1); 
+    }
+    #message-modal.open .backdrop { 
+        opacity: 1; 
+    }
+    #message-modal .modal-box {
+        position: relative; 
+        width: 90%; 
+        max-width: 700px;
+        max-height: 90vh;
+        background: #fff; 
+        border-radius: 10px; 
+        transform: translateY(12px) scale(.98); 
+        opacity: 0; 
+        transition: transform 320ms cubic-bezier(.2,.9,.2,1), opacity 260ms ease; 
+        box-shadow: 0 30px 60px rgba(8,15,30,0.35); 
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+    #message-modal.open .modal-box { 
+        transform: translateY(0) scale(1); 
+        opacity: 1; 
+    }
+    #message-content {
+        background: #f5f5f5;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        font-family: monospace;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        line-height: 1.6;
+        font-size: 13px;
+        max-height: 400px;
+        overflow-y: auto;
+    }
+
     /* --- STYLES UNTUK RESPONSIVE --- */
 /* Tambahkan kode ini di bagian paling bawah tag <style> Anda */
 
@@ -602,6 +662,25 @@ if (!isset($_SESSION['wilayah']) || $_SESSION['wilayah'] !== 'samiran') {
 
         <div class="pagination" id="pagination">
             </div>
+
+        <!-- Modal untuk Menampilkan Pesan (Khusus Samiran) -->
+        <div id="message-modal" style="display:none;">
+            <div class="backdrop" onclick="closeMessageModal()"></div>
+            <div class="modal-box">
+                <div class="modal-header">
+                    <div class="modal-title">Pesan Tagihan WhatsApp</div>
+                    <button class="modal-close" onclick="closeMessageModal()"><i class="fas fa-times"></i></button>
+                </div>
+                <div style="padding: 20px; overflow-y: auto; flex: 1;">
+                    <div id="message-content"></div>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px;">
+                        <button onclick="copyMessageToClipboard(event)" style="flex: 1; padding: 12px; background: #27ae60; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px;">
+                            <i class="fas fa-copy"></i> Salin ke Clipboard
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -837,6 +916,72 @@ if (!isset($_SESSION['wilayah']) || $_SESSION['wilayah'] !== 'samiran') {
             modal.classList.remove('open');
             // Sembunyikan elemen setelah transisi selesai
             setTimeout(() => modal.style.display = 'none', 320);
+        }
+
+        // ===== FUNGSI-FUNGSI UNTUK MODAL PESAN (Khusus Samiran) =====
+        let currentMessageData = {
+            pesan: ''
+        };
+
+        // Event listener untuk tombol "Kirim Tagihan" - buka modal pesan
+        document.addEventListener('click', function(e) {
+            const button = e.target.closest('.kirim-tagihan-btn');
+            if (button) {
+                e.preventDefault();
+                const pesan = button.getAttribute('data-pesan');
+                
+                if (pesan) {
+                    currentMessageData.pesan = pesan;
+                    openMessageModal(pesan);
+                }
+            }
+        });
+
+        function openMessageModal(pesan) {
+            const modal = document.getElementById('message-modal');
+            const messageContent = document.getElementById('message-content');
+            if (!modal || !messageContent) {
+                console.error('Modal elements not found!');
+                Swal.fire('Error', 'Elemen modal tidak ditemukan', 'error');
+                return;
+            }
+            messageContent.textContent = pesan;
+            modal.style.display = 'flex';
+            setTimeout(() => {
+                modal.classList.add('open');
+            }, 10);
+        }
+
+        function closeMessageModal() {
+            const modal = document.getElementById('message-modal');
+            if (!modal) return;
+            modal.classList.remove('open');
+            setTimeout(() => {
+                modal.style.display = 'none';
+            }, 320);
+        }
+
+        function copyMessageToClipboard(e) {
+            const pesan = currentMessageData.pesan;
+            const button = e.target.closest('button');
+            const originalText = button.innerHTML;
+            
+            navigator.clipboard.writeText(pesan).then(() => {
+                button.innerHTML = '<i class="fas fa-check"></i> Berhasil disalin!';
+                button.style.background = '#27ae60';
+                
+                setTimeout(() => {
+                    button.innerHTML = originalText;
+                    button.style.background = '#27ae60';
+                }, 2000);
+            }).catch(err => {
+                button.innerHTML = '<i class="fas fa-exclamation-circle"></i> Gagal!';
+                button.style.background = '#e74c3c';
+                setTimeout(() => {
+                    button.innerHTML = originalText;
+                    button.style.background = '#27ae60';
+                }, 2000);
+            });
         }
 
         // Event listener untuk menangani submit form tambah pelanggan

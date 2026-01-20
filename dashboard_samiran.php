@@ -940,16 +940,17 @@ if (!isset($_SESSION['wilayah']) || $_SESSION['wilayah'] !== 'samiran') {
         function openMessageModal(pesan) {
             const modal = document.getElementById('message-modal');
             const messageContent = document.getElementById('message-content');
+
             if (!modal || !messageContent) {
-                console.error('Modal elements not found!');
                 Swal.fire('Error', 'Elemen modal tidak ditemukan', 'error');
                 return;
             }
+
+            currentMessageText = pesan; // SIMPAN PESAN
             messageContent.textContent = pesan;
+
             modal.style.display = 'flex';
-            setTimeout(() => {
-                modal.classList.add('open');
-            }, 10);
+            setTimeout(() => modal.classList.add('open'), 10);
         }
 
         function closeMessageModal() {
@@ -962,26 +963,34 @@ if (!isset($_SESSION['wilayah']) || $_SESSION['wilayah'] !== 'samiran') {
         }
 
         function copyMessageToClipboard(e) {
-            const pesan = currentMessageData.pesan;
             const button = e.target.closest('button');
-            const originalText = button.innerHTML;
-            
-            navigator.clipboard.writeText(pesan).then(() => {
-                button.innerHTML = '<i class="fas fa-check"></i> Berhasil disalin!';
-                button.style.background = '#27ae60';
-                
-                setTimeout(() => {
-                    button.innerHTML = originalText;
+            const originalHTML = button.innerHTML;
+
+            if (!currentMessageText) {
+                Swal.fire('Error', 'Pesan kosong', 'error');
+                return;
+            }
+
+            navigator.clipboard.writeText(currentMessageText)
+                .then(() => {
+                    button.innerHTML = '<i class="fas fa-check"></i> Berhasil disalin!';
                     button.style.background = '#27ae60';
-                }, 2000);
-            }).catch(err => {
-                button.innerHTML = '<i class="fas fa-exclamation-circle"></i> Gagal!';
-                button.style.background = '#e74c3c';
-                setTimeout(() => {
-                    button.innerHTML = originalText;
-                    button.style.background = '#27ae60';
-                }, 2000);
-            });
+
+                    setTimeout(() => {
+                        button.innerHTML = originalHTML;
+                        button.style.background = '#27ae60';
+                    }, 2000);
+                })
+                .catch(err => {
+                    console.error(err);
+                    button.innerHTML = '<i class="fas fa-times"></i> Gagal menyalin';
+                    button.style.background = '#e74c3c';
+
+                    setTimeout(() => {
+                        button.innerHTML = originalHTML;
+                        button.style.background = '#27ae60';
+                    }, 2000);
+                });
         }
 
         // Event listener untuk menangani submit form tambah pelanggan
